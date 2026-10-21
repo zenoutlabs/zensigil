@@ -32,7 +32,10 @@ class AdoptionTests(unittest.TestCase):
 
     def write(self, name, value):
         path = self.project / name
-        path.write_text(value if isinstance(value, str) else json.dumps(value), encoding="utf-8")
+        # Fixtures use the formatter's LF form on every host. Text-mode defaults
+        # translate LF to CRLF on Windows, which correctly fails fmt --check.
+        with path.open("w", encoding="utf-8", newline="\n") as stream:
+            stream.write(value if isinstance(value, str) else json.dumps(value))
         return path
 
     def use_data(self):
@@ -275,6 +278,26 @@ class AdoptionTests(unittest.TestCase):
         self.assertEqual(json.loads(tested.stdout)["passed"], 2)
         self.assertEqual(self.cli("fmt", self.project, "--check").returncode, 0)
         self.assertEqual(self.cli("lint", self.project, "--strict").returncode, 0)
+
+    def test_crlf_project_sources_format_to_lf_without_changing_results(self):
+        source = (self.project / "main.zs").read_text(encoding="utf-8")
+        before = self.cli("run", self.project, "--json")
+        self.assertEqual(before.returncode, 0, before.stderr)
+        path = self.project / "main.zs"
+        with path.open("w", encoding="utf-8", newline="\r\n") as stream:
+            stream.write(source)
+        self.assertIn(b"\r\n", path.read_bytes())
+        checked = self.cli("fmt", self.project, "--check")
+        self.assertEqual(checked.returncode, 1, checked.stdout + checked.stderr)
+        self.assertIn("main.zs", checked.stdout)
+        formatted = self.cli("fmt", self.project, "--write")
+        self.assertEqual(formatted.returncode, 0, formatted.stdout + formatted.stderr)
+        self.assertNotIn(b"\r", path.read_bytes())
+        self.assertEqual(path.read_bytes(), source.encode("utf-8"))
+        self.assertEqual(self.cli("fmt", self.project, "--check").returncode, 0)
+        after = self.cli("run", self.project, "--json")
+        self.assertEqual(after.returncode, 0, after.stderr)
+        self.assertEqual(json.loads(before.stdout)["values"], json.loads(after.stdout)["values"])
 
 
 if __name__ == "__main__":
