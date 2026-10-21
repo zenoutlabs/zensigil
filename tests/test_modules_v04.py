@@ -62,7 +62,7 @@ class ModuleTests(unittest.TestCase):
         program={'format':'zensigil-program','format_version':1,'language_version':'0.4.0','name':'Modules',
                  'source':'use "program.zs"\nemit two()','data_text':'{}','contract_text':'','proposal_contract_text':'',
                  'modules':{'program.zs':'fn two():\n    return 2\n','input.json/helper.zs':'# nested\n'}}
-        decoded=decode_program(encode_program(program));self.assertEqual(decoded,dict(program,language_version='0.6.0'))
+        decoded=decode_program(encode_program(program));self.assertEqual(decoded,dict(program,language_version='0.7.0'))
         with tempfile.TemporaryDirectory() as parent:
             path=Path(parent)/'new';names=unpack_program(decoded,path)
             self.assertEqual((path/'program.zs').read_text(),program['modules']['program.zs'])
