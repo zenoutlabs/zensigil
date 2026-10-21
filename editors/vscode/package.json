@@ -1,0 +1,85 @@
+{
+  "name": "zensigil",
+  "displayName": "ZenSigil",
+  "description": "Language server, diagnostics, completion, navigation, formatting and syntax support for ZenSigil.",
+  "version": "0.6.0",
+  "publisher": "zenoutlabs",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "main": "./extension.js",
+  "activationEvents": [
+    "onLanguage:zensigil"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false,
+      "description": "The language server runs the selected installed Python interpreter only in trusted workspaces."
+    }
+  },
+  "contributes": {
+    "languages": [
+      {
+        "id": "zensigil",
+        "aliases": [
+          "ZenSigil",
+          "zensigil"
+        ],
+        "extensions": [
+          ".zs"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "zensigil",
+        "scopeName": "source.zensigil",
+        "path": "./syntaxes/zensigil.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "zensigil",
+        "path": "./snippets/zensigil.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "zensigil.check",
+        "title": "ZenSigil: Check Program"
+      }
+    ],
+    "configuration": {
+      "title": "ZenSigil",
+      "properties": {
+        "zensigil.pythonPath": {
+          "type": "string",
+          "default": "python3",
+          "scope": "machine",
+          "description": "Python executable with ZenSigil installed. Arguments and shell expressions are not accepted."
+        }
+      }
+    }
+  },
+  "files": [
+    "extension.js",
+    "client.js",
+    "language-configuration.json",
+    "syntaxes/**",
+    "snippets/**",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zenoutlabs/zensigil.git"
+  }
+}
