@@ -1,0 +1,47 @@
+name: Setup or first-task problem
+description: Report a problem when you install ZenSigil or run your first project.
+title: "[Setup] "
+body:
+  - type: markdown
+    attributes:
+      value: "Use synthetic data. Remove credentials and private information before submitting."
+  - type: input
+    id: version
+    attributes:
+      label: ZenSigil version and install route
+      placeholder: "0.7.0; release ZIP, wheel, or Git clone"
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Operating system, Python version, and terminal
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps and exact command
+      description: Start with the install command. State the folder where you ran it.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result or error
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: health
+    attributes:
+      label: Doctor output, if the command runs
+      description: Run python -m zensigil doctor --json. Check the output before sharing it.
+      render: json
