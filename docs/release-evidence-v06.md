@@ -6,11 +6,11 @@ they are not a claim of 45 new syntax constructs or universal language completen
 
 ## Local checks — 2026-10-21
 
-- Python 3.9.6: 311 unittest methods passed.
-- Python 3.12: the same 311 unittest methods passed.
+- Python 3.9.6: 315 unittest methods passed.
+- Python 3.12: the same 315 unittest methods passed.
 - Node 22: 47 playground data/request tests passed; production UI build passed.
 - Editor client/provider suite: 6 JavaScript tests passed. The Python suite includes
-  12 new namespace editor methods and 16 earlier LSP methods.
+  16 namespace and cross-platform editor methods and 16 earlier LSP methods.
 - All 23 runnable examples match independently specified expected outputs, including
   deliberate error behavior. The two new examples exercise scoped libraries and
   running totals/record construction.
@@ -23,6 +23,12 @@ they are not a claim of 45 new syntax constructs or universal language completen
   arity and resource probes. Separate editor and CLI reviews found no remaining
   actionable issues after the JUnit symlink-loop diagnostic fix.
 
+The first remote Windows run exposed a local file-URI drive conversion bug plus
+two platform assumptions in tests. The release fixes drive URI conversion, reads
+the Unicode conformance corpus explicitly as UTF-8, and compares permissions
+against the host filesystem's supported original mode. Four new URI regressions
+exercise Windows and POSIX conversion on every host.
+
 ## Package verification
 
 The source ZIP uses fixed metadata and sorted entries; reproducibility is checked
@@ -33,9 +39,20 @@ checks archive integrity, package metadata and portable example outputs.
 ## Publication
 
 The public destination is [zenoutlabs/zensigil](https://github.com/zenoutlabs/zensigil),
-corrected by the project owner. Source upload, byte comparison and remote CI results
-are recorded when delivery finishes. The complete source is published through the
-signed-in owner's GitHub browser session; local Git history is preserved separately.
+corrected by the project owner. All 267 source files were fetched back through Git
+and compared by blob hash, with no missing, extra or differing files.
+
+[GitHub run 39651283291](https://github.com/zenoutlabs/zensigil/actions/runs/39651283291)
+passed all seven jobs at commit `83ca09629727e2a3b30d431ae3d1b46ed22905cf`:
+315 Python tests on Ubuntu, macOS and Windows with both Python 3.9 and 3.12,
+plus the playground/editor build, installed-wheel checks and package verification.
+The final documentation-only delivery update records these results. The complete
+source was published through the signed-in owner's browser session; the earlier
+local development history is preserved separately.
+
+The [v0.6.0 prerelease](https://github.com/zenoutlabs/zensigil/releases/tag/v0.6.0)
+provides the source ZIP, wheel, local VSIX, 14 portable programs and checksum manifest.
+Download hashes are checked against the local release artifacts.
 
 ## Boundaries
 

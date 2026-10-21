@@ -49,5 +49,5 @@ not a claim of 45 independent syntax features or a finished language.
 | 41 | Portable migration | Older supported programs normalize to the new version. | Done — shared Python/JS portable fixtures; compatibility.md |
 | 42 | Release integration | Python, JS, editor and installed-package checks pass with limitations recorded. | Done — release-evidence-v06.md; VS Code host limitation recorded |
 | 43 | Verified distributables | Wheel, VSIX, source ZIP and checksums match the release. | Done — 17 checksums, archive verification and installed-wheel smoke |
-| 44 | Public source repository | Reviewed source is available at zenoutlabs/zensigil. | In progress |
-| 45 | Public delivery verification | Published files and actual remote checks are inspected. | In progress |
+| 44 | Public source repository | Reviewed source is available at zenoutlabs/zensigil. | Done — public repository; 267 files compared with no mismatches |
+| 45 | Public delivery verification | Published files and actual remote checks are inspected. | Done — 267-file Git comparison and seven successful GitHub CI jobs; release-evidence-v06.md |
