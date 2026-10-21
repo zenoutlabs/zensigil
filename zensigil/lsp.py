@@ -9,6 +9,8 @@ from .language_tools import LanguageService
 
 MAX_MESSAGE_BYTES = 1024 * 1024
 MAX_HEADER_BYTES = 8192
+MAX_DIAGNOSTICS = 200
+MAX_DIAGNOSTIC_MESSAGE_BYTES = MAX_MESSAGE_BYTES // 2
 
 
 class FramingError(ValueError):
@@ -55,6 +57,46 @@ def write_message(stream, message):
     stream.flush()
 
 
+def diagnostic_message(params):
+    """Bound diagnostic frames by count and exact encoded bytes, with notice.
+
+    A valid source can have thousands of advisory warnings. The editor must not
+    lose its connection because a diagnostic response exceeds the wire limit.
+    """
+    message = {'jsonrpc': '2.0', 'method': 'textDocument/publishDiagnostics', 'params': dict(params)}
+    items = params['diagnostics']
+
+    def size(value):
+        return len(json.dumps(value, ensure_ascii=True, separators=(',', ':'), allow_nan=False).encode('utf-8'))
+
+    if len(items) <= MAX_DIAGNOSTICS and size(message) <= MAX_DIAGNOSTIC_MESSAGE_BYTES:
+        return message
+    notice = {'range': {'start': {'line': 0, 'character': 0}, 'end': {'line': 0, 'character': 0}},
+              'severity': 2, 'source': 'ZenSigil', 'code': 'W_EDITOR_LIMIT',
+              'message': 'Some diagnostics are omitted to keep this editor response within its limits. Run zensigil lint for the full report.'}
+    message['params']['diagnostics'] = [notice]
+    # The LSP version field is optional. An abnormal client integer must not use
+    # the entire frame budget and prevent delivery of the explicit limit notice.
+    if size(message) > MAX_DIAGNOSTIC_MESSAGE_BYTES:
+        message['params'].pop('version', None)
+    used = size(message)
+    selected = []
+    omitted_error = False
+    for item in sorted(items, key=lambda value: value.get('severity', 1) != 1):
+        cost = size(item) + 1  # The comma between this item and the final notice.
+        if len(selected) < MAX_DIAGNOSTICS - 1 and used + cost <= MAX_DIAGNOSTIC_MESSAGE_BYTES:
+            selected.append(item)
+            used += cost
+        elif item.get('severity', 1) == 1:
+            omitted_error = True
+    if omitted_error:
+        notice['severity'] = 1
+        notice['code'] = 'E_EDITOR_LIMIT'
+        # Keep the message length unchanged so its reserved byte count is exact.
+    message['params']['diagnostics'] = selected + [notice]
+    return message
+
+
 class Server:
     def __init__(self, send, log=None):
         self.send = send
@@ -72,15 +114,18 @@ class Server:
         combined = {}
         for uri in self.service.documents:
             for target, diagnostics in self.service.diagnostics(uri).items():
-                bucket = combined.setdefault(target, [])
+                bucket = combined.setdefault(target, {})
                 for item in diagnostics:
-                    if item not in bucket:
-                        bucket.append(item)
+                    where = item['range']
+                    key = (where['start']['line'], where['start']['character'],
+                           where['end']['line'], where['end']['character'],
+                           item['severity'], item['code'], item['message'])
+                    bucket.setdefault(key, item)
         for uri in sorted(self.published | set(combined) | ({closed} if closed else set())):
-            params = {'uri': uri, 'diagnostics': combined.get(uri, [])}
+            params = {'uri': uri, 'diagnostics': list(combined.get(uri, {}).values())}
             if uri in self.service.documents:
                 params['version'] = self.service.documents[uri].version
-            self.send({'jsonrpc': '2.0', 'method': 'textDocument/publishDiagnostics', 'params': params})
+            self.send(diagnostic_message(params))
         self.published = set(combined)
 
     def handle(self, message):

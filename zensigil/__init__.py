@@ -7,7 +7,7 @@ from .runtime import Runtime, validate_value, compact, MAX_JSON_BYTES
 from .modules import compile_program
 from .testing import run_test_program
 
-__version__ = "0.6.0"
+__version__ = "0.7.0"
 
 
 class ContractFailure(Exception):

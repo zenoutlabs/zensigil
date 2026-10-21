@@ -5,7 +5,7 @@ from pathlib import Path, PurePosixPath, PureWindowsPath
 import re
 from urllib.parse import unquote, urlsplit
 
-from . import check
+from .lint import lint
 from .checker import BUILTINS
 from .errors import SigilError
 from .formatter import format_source
@@ -295,8 +295,8 @@ class LanguageService:
         modules, uris = {}, {'<program>': uri}
         try:
             modules, uris = self.bundle(uri)
-            result = check(document.source, modules=modules)
-            items = result['diagnostics']
+            result = lint(document.source, modules=modules)
+            items = result['diagnostics'] + result.get('warnings', [])
         except (SigilError, RecursionError) as error:
             if isinstance(error, RecursionError):
                 error = SigilError('E_LIMIT', 'Source nesting exceeds editor limits.')
@@ -310,7 +310,8 @@ class LanguageService:
             source = document.source if name == '<program>' else modules.get(name, '')
             start = position(source, item.get('line', 1), item.get('column', 1))
             end = position(source, item.get('line', 1), item.get('column', 1) + 1)
-            result.setdefault(target, []).append({'range': {'start': start, 'end': end}, 'severity': 1,
+            severity = 2 if item.get('severity') == 'warning' else 1
+            result.setdefault(target, []).append({'range': {'start': start, 'end': end}, 'severity': severity,
                                                   'source': 'ZenSigil', 'code': item['code'], 'message': item['message']})
         return result
 

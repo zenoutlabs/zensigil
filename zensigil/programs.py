@@ -11,7 +11,7 @@ from .errors import SigilError
 # ECMAScript trim whitespace keeps browser and Python document names consistent.
 NAME_WHITESPACE = "\u0009\u000a\u000b\u000c\u000d\u0020\u00a0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u2028\u2029\u202f\u205f\u3000\ufeff"
 FORMAT = "zensigil-program"
-LANGUAGE_VERSION = "0.6.0"
+LANGUAGE_VERSION = "0.7.0"
 MAX_PROGRAM_BYTES = 10 * 1024 * 1024
 TEXT_LIMITS = {"source": 65536, "data_text": 1048576,
                "contract_text": 262144, "proposal_contract_text": 262144}
@@ -38,8 +38,8 @@ def validate_program(value):
         raise ValueError("Unknown program fields: " + ", ".join(sorted(extra)) + ".")
     if type(value["format_version"]) not in (int, float) or value["format_version"] != 1:
         raise ValueError("Unsupported program format version. Expected format 1.")
-    if value["language_version"] not in ("0.2.0", "0.3.0", "0.4.0", "0.5.0", "0.6.0"):
-        raise ValueError("Unsupported language version. Expected ZenSigil 0.2.0, 0.3.0, 0.4.0, 0.5.0 or 0.6.0.")
+    if value["language_version"] not in ("0.2.0", "0.3.0", "0.4.0", "0.5.0", "0.6.0", "0.7.0"):
+        raise ValueError("Unsupported language version. Expected ZenSigil 0.2.0, 0.3.0, 0.4.0, 0.5.0, 0.6.0 or 0.7.0.")
     name = value["name"]
     if type(name) is not str or not name.strip(NAME_WHITESPACE):
         raise ValueError("Give your program a nonblank name before saving.")
