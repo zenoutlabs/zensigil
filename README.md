@@ -2,7 +2,7 @@
 
 **A readable experimental programming language with a general core and reviewable intent.**
 
-ZenSigil 0.6.0 is a working interpreter, command-line tool, and local browser
+ZenSigil 0.7.0 is a working interpreter, command-line tool, and local browser
 playground. It takes JSON data and produces structured values, proposed actions and notes. The core
 knows nothing about Amazon, inventory, or support tickets; those are example programs.
 
@@ -56,7 +56,33 @@ containing source, input, both optional contracts and source modules. Browser st
 and local address; portable files are the backup/sharing route. Opening another
 program with unsaved edits offers Save & open, Discard & open, or Cancel.
 
-## New in 0.6
+## New in 0.7
+
+Start with the [short developer quickstart](docs/quickstart.md). No course is required.
+A project can now name its input and contract files. Commands use those defaults.
+Explicit flags can override them. You can export the runnable project:
+
+```sh
+python3 -m zensigil init my-project
+python3 -m zensigil run my-project
+python3 -m zensigil lint my-project
+python3 -m zensigil test my-project --fail-if-empty
+python3 -m zensigil pack my-project --name "My project" --output my-project.sigil.json
+python3 -m zensigil run my-project.sigil.json
+```
+
+Lint now warns about some known type errors before execution. The editor shows
+warnings separately from errors. The playground has a **Find warnings** button.
+These checks do not execute source or prove runtime success. Unknown values remain
+unknown. Read [type advice and its limits](docs/type-diagnostics-v07.md).
+
+This release also fixes malformed project-version and output-path failures.
+See the [45-needs audit](docs/adoption-audit-v07.md), [24-outcome plan](docs/next-v07.md),
+[current claim check](docs/reality-check-v07.md), and [release evidence](docs/release-evidence-v07.md).
+External developer trials remain future evidence. The [trial brief](docs/developer-trial.md)
+is a proposed plan, not an active reward offer.
+
+## Foundation from 0.6
 
 Give reusable libraries clear names and public APIs:
 
@@ -181,8 +207,8 @@ python3 -m zensigil doctor --json
 Optional proposal contracts describe permitted actions and their fields. If any
 proposal fails, the entire preview is discarded. In the playground you can also
 check without running, download source, inspect proposal origins, and use
-Ctrl/Cmd+Enter to run or Ctrl/Cmd+S to save. Existing 0.2–0.5 portable files and saved
-browser drafts open in 0.6. See the compatibility guide for limits.
+Ctrl/Cmd+Enter to run or Ctrl/Cmd+S to save. Existing 0.2–0.6 portable files and saved
+browser drafts open in 0.7. See the compatibility guide for limits.
 
 ## Command line
 
@@ -240,6 +266,8 @@ up to 400 products per preview; larger collections must be split into batches.
 
 ## Learn and review
 
+- [Developer quickstart](docs/quickstart.md)
+- [Current audit and claims](docs/reality-check-v07.md)
 - [Developer workflows and automation](docs/developer-workflows.md)
 - [0.6 release evidence](docs/release-evidence-v06.md)
 - [0.5 release evidence](docs/release-evidence-v05.md)
