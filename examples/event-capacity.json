@@ -1,0 +1,22 @@
+{
+  "sessions": [
+    {
+      "id": "S1",
+      "title": "Community drawing",
+      "capacity": 20,
+      "registered": 23
+    },
+    {
+      "id": "S2",
+      "title": "Book club",
+      "capacity": 12,
+      "registered": 12
+    },
+    {
+      "id": "S3",
+      "title": "Garden workshop",
+      "capacity": 30,
+      "registered": 18
+    }
+  ]
+}

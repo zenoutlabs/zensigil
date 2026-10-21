@@ -1,0 +1,40 @@
+{
+  "reorder": {
+    "type": "object",
+    "properties": {
+      "sku": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
+      },
+      "quantity": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "target_days": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 3650
+      },
+      "explanation": {
+        "type": "string",
+        "minLength": 1
+      },
+      "evidence": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "minItems": 2
+      }
+    },
+    "required": [
+      "sku",
+      "quantity",
+      "target_days",
+      "explanation",
+      "evidence"
+    ],
+    "additionalProperties": false
+  }
+}

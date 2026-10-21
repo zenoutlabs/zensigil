@@ -1,0 +1,27 @@
+{
+  "read_next": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
+      },
+      "title": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
+      },
+      "explanation": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "required": [
+      "id",
+      "title",
+      "explanation"
+    ],
+    "additionalProperties": false
+  }
+}

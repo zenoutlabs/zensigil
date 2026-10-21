@@ -1,0 +1,26 @@
+{
+  "review_capacity": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
+      },
+      "extra_places_needed": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "explanation": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "required": [
+      "id",
+      "extra_places_needed",
+      "explanation"
+    ],
+    "additionalProperties": false
+  }
+}
