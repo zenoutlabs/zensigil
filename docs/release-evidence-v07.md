@@ -10,7 +10,7 @@ The completion report records that final publication check separately.
 
 | Check | Observed result | Scope |
 |---|---|---|
-| Full Python regression suite | 361 tests passed on Python 3.9 and 3.12 | Local macOS run on the integrated source |
+| Full Python regression suite | 362 tests passed on Python 3.9 and 3.12 | Local macOS run on the integrated source |
 | Playground tests | 49 tests passed | Request, state, module, and portable-file behavior |
 | Editor client tests | 6 tests passed | Protocol framing and provider behavior |
 | Playground production build | Passed | Bundled offline assets synchronized |
@@ -37,6 +37,11 @@ input overrides, module-root symlink loops, and oversized editor diagnostics.
 The oversized case used a valid 42,324-byte program. Its previous warning message
 exceeded the client's 1 MiB limit. Count and byte limits now preserve errors and
 state when some diagnostics are omitted.
+
+The first remote Windows run found a fixture problem. Default text writes changed
+LF line endings to CRLF. The formatter correctly reported a change. The test and
+installed-package verifier now write LF explicitly. A regression checks that
+`fmt --write` converts CRLF to LF without changing the program result.
 
 ## Release checks
 

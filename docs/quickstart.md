@@ -143,6 +143,10 @@ python -m zensigil lint latency-review --strict
 python -m zensigil fmt latency-review --check
 ```
 
+If the format check reports a change, run `python -m zensigil fmt latency-review --write`.
+Then run the format check again. This also converts Windows line endings to the
+formatter's LF line endings. It does not change the program result.
+
 The run result must have `ok: true` and this `values` list:
 
 ```json
