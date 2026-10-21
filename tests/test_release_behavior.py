@@ -17,7 +17,7 @@ class ReleaseBehaviorTests(unittest.TestCase):
             with self.subTest(case=case["name"]):
                 if case["valid"]:
                     result = decode_program(case["text"])
-                    self.assertEqual(result["language_version"], "0.6.0")
+                    self.assertEqual(result["language_version"], "0.7.0")
                     self.assertEqual(result["data_text"], "{unfinished")
                 else:
                     with self.assertRaises((ValueError, UnicodeError)):

@@ -25,15 +25,54 @@ class CLIParser(argparse.ArgumentParser):
 
 def separate_output(output, inputs):
     output_path = Path(output)
+    try:
+        resolved_output = output_path.resolve()
+    except (OSError, RuntimeError) as error:
+        raise ValueError("Output path must resolve without symbolic link loops.") from error
     for path in inputs:
         if not path:
             continue
         input_path = Path(path)
-        same_spelling = input_path.resolve() == output_path.resolve()
+        try:
+            same_spelling = input_path.resolve() == resolved_output
+        except (OSError, RuntimeError) as error:
+            raise ValueError("Input paths must resolve without symbolic link loops.") from error
         # Case aliases on macOS and hard links can share a file despite spelling.
         same_file = input_path.exists() and output_path.exists() and input_path.samefile(output_path)
         if same_spelling or same_file:
             raise ValueError("Output must be different from every input file.")
+
+
+def project_defaults(args, project):
+    """Use declared project files only when the user did not supply that flag."""
+    from .projects import INPUT_FIELDS
+    for field in INPUT_FIELDS:
+        if getattr(args, field) is None:
+            setattr(args, field, project[field])
+
+
+def resolve_module_root(path):
+    try:
+        return Path(path).resolve()
+    except (OSError, RuntimeError) as error:
+        raise SigilError("E_IMPORT", "Module root must resolve without symbolic link loops.") from error
+
+
+def project_output_inputs(project, output):
+    """Protect declared inputs, even after a flag overrides their use this run."""
+    from .projects import INPUT_FIELDS
+    protected = [project["entry"], project["root"] / "zensigil.json", *project["tests"]]
+    protected += [project[field] for field in INPUT_FIELDS if project[field] is not None]
+    if Path(output).exists():
+        from .modules import file_modules
+        for source_path in [project["entry"], *project["tests"]]:
+            try:
+                source = read_text(source_path, 65536)
+                modules = file_modules(source, source_path, root=project["root"])
+                protected += [project["root"] / name for name in modules]
+            except (SigilError, OSError, ValueError, RuntimeError) as error:
+                raise ValueError("Cannot replace existing output while project dependencies cannot be checked.") from error
+    return protected
 
 
 def read_stdin():
@@ -171,7 +210,7 @@ def parser_for_cli():
     initialize = commands.add_parser("init", help="Create a new project directory with a module and tests")
     initialize.add_argument("directory")
     pack = commands.add_parser("pack", help="Bundle source and raw input into a portable program")
-    pack.add_argument("source", help="Path to a .zs source")
+    pack.add_argument("source", help="A .zs source or project directory")
     add_inputs(pack)
     pack.add_argument("--module-root", help="Explicit root for bundling relative source module imports")
     pack.add_argument("--name", required=True)
@@ -256,8 +295,8 @@ def main(argv=None):
         from .repl import main as repl_main
         from .modules import validate_modules
         try:
-            data = json_object(read_text(args.data, 1048576), "Input data") if args.data else None
-            modules = validate_modules(json_object(read_text(args.modules, MAX_PROGRAM_BYTES), "Modules")) if args.modules else None
+            data = json_object(read_text(args.data, 1048576), "Input data") if args.data is not None else None
+            modules = validate_modules(json_object(read_text(args.modules, MAX_PROGRAM_BYTES), "Modules")) if args.modules is not None else None
             return repl_main(data=data, modules=modules)
         except (OSError, ValueError, SigilError, RecursionError) as error:
             print(f"Cannot start REPL: {error}", file=sys.stderr)
@@ -343,25 +382,35 @@ def main(argv=None):
     source = ""
     try:
         if args.command == "pack":
-            source = read_text(args.source, 65536)
+            source_path = Path(args.source)
+            if source_path.is_dir():
+                from .projects import load_project
+                error_code = "E_PROJECT"
+                project = load_project(source_path)
+                source_path = project["entry"]
+                project_defaults(args, project)
+            source = read_text(source_path, 65536)
             # Ordinary unfinished drafts remain packable. Imports require a valid
             # syntax tree to discover their explicit dependency graph safely.
             modules = {}
             if re.search(r"(?m)^[ \t]*use(?:[ \t]|$)", source):
                 from .modules import file_modules
-                module_root = Path(args.module_root).resolve() if args.module_root else Path(args.source).parent.resolve()
-                modules = file_modules(source, args.source, root=module_root)
+                module_root = resolve_module_root(args.module_root) if args.module_root else project["root"] if project else source_path.parent.resolve()
+                modules = file_modules(source, source_path, root=module_root)
                 module_paths = [module_root / name for name in modules]
             program = {"format": FORMAT, "format_version": 1, "language_version": LANGUAGE_VERSION,
                        "name": args.name, "source": source,
-                       "data_text": read_text(args.data, 1048576) if args.data else "{}",
-                       "contract_text": read_text(args.contract, MAX_CONTRACT_BYTES) if args.contract else "",
-                       "proposal_contract_text": read_text(args.proposal_contract, MAX_CONTRACT_BYTES) if args.proposal_contract else ""}
+                       "data_text": read_text(args.data, 1048576) if args.data is not None else "{}",
+                       "contract_text": read_text(args.contract, MAX_CONTRACT_BYTES) if args.contract is not None else "",
+                       "proposal_contract_text": read_text(args.proposal_contract, MAX_CONTRACT_BYTES) if args.proposal_contract is not None else ""}
             if modules:
                 program["modules"] = modules
             text = encode_program(program)
             error_code = "E_OUTPUT"
-            separate_output(args.output, [args.source, args.data, args.contract, args.proposal_contract] + module_paths)
+            protected = [source_path, args.data, args.contract, args.proposal_contract] + module_paths
+            if project:
+                protected += project_output_inputs(project, args.output)
+            separate_output(args.output, protected)
             write_text(args.output, text, args.force)
             print(f"Saved portable program: {args.output}\nDraft text preserved. Run 'zensigil check' to validate it.")
             return 0
@@ -380,6 +429,7 @@ def main(argv=None):
             from .projects import load_project
             project = load_project(source_path)
             source_path = project["entry"]
+            project_defaults(args, project)
         portable = str(source_path).endswith(".sigil.json")
         if portable:
             error_code = "E_PROGRAM"
@@ -389,7 +439,7 @@ def main(argv=None):
             source = read_stdin() if args.source == "-" else read_text(source_path, 65536)
             program = {}
         error_code = "E_INPUT"
-        data_text = read_text(args.data, 1048576) if args.data else program.get("data_text")
+        data_text = read_text(args.data, 1048576) if args.data is not None else program.get("data_text")
         if data_text is not None:
             data = json_object(data_text, "Input data")
         contracts = {}
@@ -398,11 +448,11 @@ def main(argv=None):
             ("proposal_contract", "proposal_contract_text", "E_PROPOSAL_CONTRACT", "Proposal contract")):
             error_code = code
             path = getattr(args, flag)
-            text = read_text(path, MAX_CONTRACT_BYTES) if path else program.get(field, "")
+            text = read_text(path, MAX_CONTRACT_BYTES) if path is not None else program.get(field, "")
             # An explicit empty file is an invalid override, not an absent contract.
-            contracts[flag] = json_object(text, label) if path or text.strip() else None
+            contracts[flag] = json_object(text, label) if path is not None or text.strip() else None
         from .modules import file_modules
-        module_root = Path(args.module_root).resolve() if args.module_root else project["root"] if project else source_path.parent.resolve()
+        module_root = resolve_module_root(args.module_root) if args.module_root else project["root"] if project else source_path.parent.resolve()
         discovering_modules = not portable
         if args.source == "-" and not args.module_root:
             modules = {}  # stdin never discovers files without an explicit module root
@@ -482,7 +532,7 @@ def main(argv=None):
                     and not (args.source == "-" and not args.module_root)
                     and not module_paths and re.search(r"(?m)^[ \t]*use(?:[ \t]|$)", source)):
                 from .modules import file_modules
-                module_root = Path(args.module_root).resolve() if args.module_root else project["root"] if project else source_path.parent.resolve()
+                module_root = resolve_module_root(args.module_root) if args.module_root else project["root"] if project else source_path.parent.resolve()
                 discovering_modules = True
                 try:
                     protected_modules = file_modules(source, source_path, root=module_root)
@@ -494,17 +544,17 @@ def main(argv=None):
                 raise ValueError("Cannot replace an existing file inside the module root after module discovery failed.")
             source_paths = [args.source, args.data, args.contract, args.proposal_contract] + module_paths
             if project:
-                source_paths += [project["entry"], project["root"] / "zensigil.json"] + project["tests"]
+                source_paths += project_output_inputs(project, args.output)
             separate_output(args.output, source_paths)
             write_text(args.output, json.dumps(result, indent=2, ensure_ascii=True) + "\n", args.force)
-        except (OSError, ValueError) as error:
+        except (OSError, ValueError, RuntimeError, SigilError) as error:
             result = failure("E_OUTPUT", error)
     if args.command == "test" and args.junit:
         try:
             from .reports import junit_xml
             protected = [args.source, args.data, args.contract, args.proposal_contract] + module_paths
             if project:
-                protected += [project["entry"], project["root"] / "zensigil.json"] + project["tests"]
+                protected += project_output_inputs(project, args.junit)
             separate_output(args.junit, protected)
             write_text(args.junit, junit_xml(result), False)
         except (OSError, ValueError, RecursionError, RuntimeError) as error:

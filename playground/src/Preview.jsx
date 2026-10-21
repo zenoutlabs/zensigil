@@ -8,11 +8,12 @@ export default function Preview({result, status, mode, onSourceLocation, onRetry
   const tested = status === 'done' && mode === 'test';
   const ready = status === 'done' && result?.ok && mode === 'run';
   const checked = status === 'checked' && result?.ok;
+  const linted = status === 'done' && mode === 'lint' && result?.ok;
   const failed = done && result && !result.ok;
-  const title = mode === 'check' ? 'Program check' : mode === 'test' ? 'Program tests' : mode === 'format' ? 'Format source' : 'Results';
-  const statusLabel = status === 'running' ? 'Working…' : status === 'stale' ? 'Run to update' : failed ? 'Needs a correction' : checked ? 'Check passed' : tested ? (result.total ? 'Tests passed' : 'No tests declared') : ready ? 'Run complete' : 'Waiting for a program';
-  function diagnostics(items) {
-    return items.map((error,index)=><article className="diagnostic" key={index}>
+  const title = mode === 'check' ? 'Program check' : mode === 'lint' ? 'Code warnings' : mode === 'test' ? 'Program tests' : mode === 'format' ? 'Format source' : 'Results';
+  const statusLabel = status === 'running' ? 'Working…' : status === 'stale' ? 'Run to update' : failed ? 'Needs a correction' : checked ? 'Check passed' : linted ? (result.warnings?.length ? 'Review warnings' : 'No warnings found') : tested ? (result.total ? 'Tests passed' : 'No tests declared') : ready ? 'Run complete' : 'Waiting for a program';
+  function diagnostics(items, advisory = false) {
+    return items.map((error,index)=><article className={`diagnostic${advisory ? ' advisory' : ''}`} key={index}>
       <p className="error-code">{error.code}{error.source_name && error.source_name !== '<program>' ? ` · ${error.source_name}` : ''}{error.output_path ? ` · output ${error.output_path}` : error.data_path ? ` · input ${error.data_path}` : error.line ? ` · line ${error.line}, column ${error.column}` : ''}</p>
       <h3>{error.message}</h3>
       {error.source_line ? <pre>{error.source_line}{'\n'}{' '.repeat(Math.max(0,Math.min((error.column || 1)-1,200)))}^</pre> : null}
@@ -22,7 +23,8 @@ export default function Preview({result, status, mode, onSourceLocation, onRetry
   }
   return <section className="preview" aria-label="Preview results" aria-live="polite" aria-busy={status === 'running'}>
     <div className="preview-header"><h2>{title}</h2><span className={`status ${ready || checked || (tested && result?.ok && result.total) ? 'ready' : failed ? 'failed' : ''}`}><i />{statusLabel}</span></div>
-    {checked ? <div className="preview-empty"><p>Your program passed its checks.</p><span>Syntax, names, supplied input and contract definitions were checked. Annotations, calculations and emitted outputs are checked when execution reaches them. Choose Run preview or Run tests.</span></div>
+    {linted ? <div className="diagnostics"><p className="result-count">{count((result.warnings || []).length, 'warning')}</p>{diagnostics(result.warnings || [], true)}<p className="empty-copy">These warnings can help you find type errors and unused code. This check does not run your program. No warnings does not prove that the program is correct. Run tests and check the result.</p></div>
+      : checked ? <div className="preview-empty"><p>Your program passed its checks.</p><span>Syntax, names, supplied input and contract definitions were checked. Annotations, calculations and emitted outputs are checked when execution reaches them. Choose Find warnings, Run preview, or Run tests.</span></div>
       : tested ? <div className="result-body"><p className="result-count">{result.passed || 0} passed · {result.failed || 0} failed · {result.total || 0} tests</p>
         {result.tests?.length ? result.tests.map((item,index)=><article className="test-result" key={index}><h3>{item.ok ? '✓' : '×'} {item.name}</h3>{item.source_name && item.source_name !== '<program>' ? <p className="proposal-provenance">{item.source_name}</p> : null}{diagnostics(item.diagnostics || [])}</article>) : <><p className="empty-copy">No test blocks ran. Add a <code>test "description":</code> block with <code>require</code> expectations.</p>{diagnostics(result.diagnostics || [])}</>}
         <p className="empty-copy">Tests run isolated expectations. The main program's effects do not execute.</p></div>

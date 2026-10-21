@@ -52,8 +52,8 @@ test('trusted fake host initializes isolated Python and routes every editor prov
     window: {createOutputChannel: () => ({appendLine() {}, dispose() {}}), showErrorMessage() {}, activeTextEditor: {document}},
     languages: {createDiagnosticCollection: () => ({set: (...args) => diagnostics.push(args), delete() {}, dispose() {}})},
     commands: {registerCommand: (name, fn) => { events.check = fn; return disposable(); }},
-    Range: class {constructor(...args) { this.args = args; }}, Diagnostic: class {constructor(range, message) { this.range = range; this.message = message; }},
-    DiagnosticSeverity: {Error: 0}, Uri: {parse: value => value},
+    Range: class {constructor(...args) { this.args = args; }}, Diagnostic: class {constructor(range, message, severity) { this.range = range; this.message = message; this.severity = severity; }},
+    DiagnosticSeverity: {Error: 0, Warning: 1}, Uri: {parse: value => value},
     CompletionItem: class {constructor(label, kind) { this.label = label; this.kind = kind; }},
     MarkdownString: class {appendCodeblock(value) { this.value = value; }}, Hover: class {constructor(contents) { this.contents = contents; }},
     Location: class {constructor(uri, range) { this.uri = uri; this.range = range; }}, SymbolInformation: class {constructor(name) { this.name = name; }},
@@ -86,6 +86,13 @@ test('trusted fake host initializes isolated Python and routes every editor prov
   assert.equal(diagnostics.length, 0);
   notify('textDocument/publishDiagnostics', {uri: uri.toString(), version: 2, diagnostics: []});
   assert.equal(diagnostics.length, 1);
+  const range = {start: {line: 0, character: 0}, end: {line: 0, character: 1}};
+  notify('textDocument/publishDiagnostics', {uri: uri.toString(), version: 2, diagnostics: [
+    {range, severity: 2, code: 'W_UNUSED', message: 'A binding is unused.'},
+    {range, severity: 1, code: 'E_NAME', message: 'A name is unknown.'}
+  ]});
+  assert.equal(diagnostics.at(-1)[1][0].severity, vscode.DiagnosticSeverity.Warning);
+  assert.equal(diagnostics.at(-1)[1][1].severity, vscode.DiagnosticSeverity.Error);
   events.close(document);
   assert.equal(notifications.at(-1).method, 'textDocument/didClose');
 });

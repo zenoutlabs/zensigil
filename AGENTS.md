@@ -16,3 +16,7 @@ Keep generated web assets and demo copies in sync using the playground build com
 
 For AI-authored .zs programs, use `docs/ai-reference.md`; check and run each program
 against a known input, and compare the result to explicit expected proposals.
+
+Use short sentences and common words in new user documentation. Keep technical
+names when needed. Aim for ASD-STE100 writing principles. Do not claim formal
+compliance without a controlled-language review.

@@ -112,3 +112,18 @@ untrusted fake host. Tests are in `tests/test_editor_v06.py`,
 The actual VS Code extension-host harness exists, but its previous local launch
 stalled at workspace trust and did not complete assertions. These automated
 results therefore do not claim successful validation inside the real VS Code UI.
+
+## Advisory warnings in 0.7
+
+The server uses lint, which first performs the existing syntax and binding checks.
+A failed check is an Error (LSP severity 1). Advisory findings are Warnings (severity 2).
+Warnings can describe unused code, shadowed names, unreachable code, or known type
+misuse. They keep their source file and location. Editing a file updates the warning.
+See [type advice](type-diagnostics-v07.md) for what the checks cannot prove.
+
+### Large diagnostic results
+
+Each editor message has at most 200 diagnostic items and 512 KiB of encoded JSON.
+Errors have priority when the full result does not fit. `W_EDITOR_LIMIT` or
+`E_EDITOR_LIMIT` states that some results were omitted. Run the command-line
+checker or linter to inspect a larger result. This limit keeps the editor connected.

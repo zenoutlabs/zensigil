@@ -108,5 +108,10 @@
     "name": "0.6.0 with explicit namespace module source",
     "valid": true,
     "text": "{\"format\": \"zensigil-program\", \"format_version\": 1, \"language_version\": \"0.6.0\", \"name\": \"Shared program\", \"source\": \"say \\\"Hello\\\"\\n\", \"data_text\": \"{unfinished\", \"contract_text\": \"\", \"modules\": {\"lib/current.zs\": \"export fn double(n):\\n    return n * 2\\n\"}}"
+  },
+  {
+    "name": "0.7.0 with explicit namespace module source",
+    "valid": true,
+    "text": "{\"format\": \"zensigil-program\", \"format_version\": 1, \"language_version\": \"0.7.0\", \"name\": \"Shared program\", \"source\": \"say \\\"Hello\\\"\\n\", \"data_text\": \"{unfinished\", \"contract_text\": \"\", \"modules\": {\"lib/current.zs\": \"export fn double(n):\\n    return n * 2\\n\"}}"
   }
 ]

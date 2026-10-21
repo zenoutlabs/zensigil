@@ -28,7 +28,7 @@ class PortableCodecTests(unittest.TestCase):
         program = document(source="when unfinished\n", data_text="{\n", contract_text=" { ",
                            proposal_contract_text="\t{", name="  Draft name  ")
         upgraded = decode_program(json.dumps(program))
-        self.assertEqual(upgraded["language_version"], "0.6.0")
+        self.assertEqual(upgraded["language_version"], "0.7.0")
         for key in ("source", "data_text", "contract_text", "proposal_contract_text", "name"):
             self.assertEqual(upgraded[key], program[key])
         self.assertEqual(decode_program(encode_program(upgraded)), upgraded)

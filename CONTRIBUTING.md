@@ -23,7 +23,7 @@ if behavior intentionally changes, and runs the existing suite.
 The tests are not an independent security audit. Please do not report the project
 as production-ready merely because they pass. No stable compatibility promise is
 made before 1.0.
-The source is now licensed under MIT; public publication is still a separate step.
+The source is MIT-licensed and public at https://github.com/zenoutlabs/zensigil.
 
 For the playground codec tests and production build:
 
@@ -40,3 +40,10 @@ future libraries. Do not hard-code customer names or business fields in the eval
 For proposed syntax or semantic changes, use [the language evolution checklist](docs/language-evolution.md).
 For everyday development, use [the workflow guide](docs/developer-workflows.md).
 Run editor client tests with `npm --prefix editors/vscode test`.
+
+Start with the [quickstart](docs/quickstart.md) if you want to try one useful task.
+Use the setup report form for installation problems. Use the language inconsistency
+form for a difference between a rule and its result. Both forms ask for evidence.
+
+The [developer trial](docs/developer-trial.md) describes a proposed small study.
+It is not an active reward or security-bounty offer.

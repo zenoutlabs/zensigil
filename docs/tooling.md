@@ -210,3 +210,15 @@ the release evidence for the recorded outcome. Rename, references, semantic
 tokens, signature-help popups, incremental document edits and dynamic workspace
 changes remain unsupported. A packaged VSIX does not establish Marketplace
 publication.
+
+## Project input settings in 0.7
+
+A manifest can include `data`, `contract`, and `proposal_contract` paths.
+Each path is a relative `.json` file inside the project root. All systems use `/`.
+Run, check, test, and lint use those defaults. The matching command flag overrides
+one default. A blank path or invalid file produces an error; it cannot disable a check.
+
+Use `pack PROJECT --name NAME --output FILE.sigil.json` to share a runnable project.
+The portable file contains entry source, imported modules, input, and contracts.
+Separate project test files are not included. Share the source folder for those tests.
+See the [quickstart](quickstart.md) for a complete measured-result example.

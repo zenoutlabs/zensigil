@@ -9,6 +9,7 @@ from .errors import SigilError
 from .jsonio import loads
 from .contracts import MAX_CONTRACT_BYTES, diagnostic
 from .proposals import proposal_diagnostic
+from .lint import lint
 
 PACKAGE = Path(__file__).resolve().parent
 WEB = PACKAGE / "web"
@@ -43,7 +44,7 @@ CATALOG = [
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "ZenSigil/0.6"
+    server_version = "ZenSigil/0.7"
 
     def setup(self):
         super().setup()
@@ -111,11 +112,14 @@ class Handler(BaseHTTPRequestHandler):
         if self.headers.get("Content-Type", "").split(";")[0].strip() != "application/json":
             return self.send(415, {"error": "Send application/json."})
         route = urlsplit(self.path).path
-        if route not in {"/api/run", "/api/check", "/api/test", "/api/format"}:
+        if route not in {"/api/run", "/api/check", "/api/lint", "/api/test", "/api/format"}:
             return self.send(404, {"error": "Not found."})
         def reply(result):
             if not result.get("ok", False):
                 result.setdefault("values", [])
+            if route == "/api/lint":
+                result.update(mode="lint")
+                result.setdefault("warnings", [])
             if route == "/api/test":
                 result.update(mode="test")
                 for key in ("total", "passed", "failed"):
@@ -185,7 +189,7 @@ class Handler(BaseHTTPRequestHandler):
                                    "diagnostics": [proposal_diagnostic("E_PROPOSAL_CONTRACT", "$", str(error))]})
         if "modules" in body and type(body["modules"]) is not dict:
             return reply(failure(SigilError("E_IMPORT", "modules must be an object of source files."), body["source"]))
-        operation = {"/api/run": run, "/api/check": check, "/api/test": test}[route]
+        operation = {"/api/run": run, "/api/check": check, "/api/lint": lint, "/api/test": test}[route]
         result = operation(body["source"], body["data"], contract=contract,
                            proposal_contract=proposal_contract, modules=body.get("modules"))
         reply(result)

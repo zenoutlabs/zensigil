@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.7.0 — developer adoption and type advice
+
+- Add bounded input and contract paths to project manifests, with explicit flag overrides.
+- Export a runnable project with `pack PROJECT`.
+- Add conservative type warnings to lint, editor diagnostics, and the playground.
+- Keep warning severity separate from blocking errors.
+- Improve the project starter and add an isolated first-task check.
+- Return diagnostics for invalid manifest versions and output symlink loops.
+- Add a current 45-needs audit, public claim check, feedback forms, and a proposed developer trial.
+- Preserve the source grammar and runtime behavior. The checks do not provide full static type inference.
+
+
 ## 0.6.0 — 2026-10-21
 
 - Named module imports, explicit exports, private helpers and isolated source scopes.

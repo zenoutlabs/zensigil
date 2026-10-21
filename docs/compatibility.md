@@ -110,3 +110,15 @@ Changes to evaluation semantics require a specification update and regression
 tests. Changes to the portable envelope require a deliberate format/version policy.
 Native exact decimal values, static type inference, asynchronous I/O and a package registry remain
 future design work. Closures, namespaces, the REPL and a language server are implemented with documented limits.
+
+## Version 0.7
+
+The source grammar and runtime rules are unchanged. Portable files from 0.2 through
+0.6 open as 0.7 files. Project manifests from 0.4 through 0.6 remain supported.
+Projects may now declare `data`, `contract`, and `proposal_contract` JSON paths.
+Paths must stay inside the project. An explicit CLI flag overrides the matching
+setting, including an invalid override, which reports an error.
+
+`lint --strict` can now fail on new `W_TYPE` warnings. Plain lint remains advisory.
+Check and run keep their existing meanings. The type pass does not infer all types;
+see [its limits](type-diagnostics-v07.md). This is a pre-1.0 release.

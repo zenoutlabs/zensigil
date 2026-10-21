@@ -98,6 +98,9 @@ def lint(source, data=None, *, modules=None, contract=None, proposal_contract=No
     result.update(mode='lint', warnings=[])
     if result['ok']:
         program, _ = compile_program(source, modules)
-        result['warnings'] = [located(item, source, modules) for item in warnings(program)]
+        from .type_lint import warnings as type_warnings
+        combined = warnings(program) + type_warnings(program)
+        combined.sort(key=lambda item: (item['source_name'], item['line'], item['column'], item['code']))
+        result['warnings'] = [located(item, source, modules) for item in combined]
     result['version'] = __version__
     return result
