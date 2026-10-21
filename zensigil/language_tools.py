@@ -1,6 +1,7 @@
 """Editor queries over explicit source, without executing a ZenSigil program."""
 from dataclasses import dataclass
-from pathlib import Path
+import os
+from pathlib import Path, PurePosixPath, PureWindowsPath
 import re
 from urllib.parse import unquote, urlsplit
 
@@ -39,18 +40,48 @@ SIGNATURE_ARGUMENTS = {
 }
 
 
-def file_path(uri):
-    """Only local file URIs can cause a filesystem read."""
-    if not isinstance(uri, str):
+def _file_uri_path(uri, windows):
+    """Convert our local-only file URI subset without touching the filesystem.
+
+    RFC 8089 drive URIs contain `/C:/`, while Windows paths need `C:/`.
+    Keeping the conversion pure lets either path flavour be tested on any host.
+    """
+    if not isinstance(uri, str) or any(ord(char) < 32 or ord(char) == 127 for char in uri):
         return None
     try:
         parsed = urlsplit(uri)
-        if parsed.scheme != 'file' or parsed.netloc not in ('', 'localhost') or parsed.query or parsed.fragment:
+        if parsed.scheme != 'file' or parsed.netloc.lower() not in ('', 'localhost') or parsed.query or parsed.fragment:
+            return None
+        # Do not let decoding change path segment boundaries or accept Windows
+        # UNC/device paths through the empty-authority form of a file URI.
+        if ('\\' in parsed.path or re.search(r'%(?:2f|5c)', parsed.path, re.I)
+                or re.search(r'%(?![0-9a-fA-F]{2})', parsed.path)):
             return None
         decoded = unquote(parsed.path, errors='strict')
-        if '\x00' in decoded or not Path(decoded).is_absolute():
+        if decoded.startswith('//') or any(ord(char) < 32 or ord(char) == 127 for char in decoded):
             return None
-        return Path(decoded).resolve()
+        if windows:
+            if not re.match(r'^/[A-Za-z]:/', decoded) or ':' in decoded[3:]:
+                return None
+            path = PureWindowsPath(decoded[1:])
+        else:
+            path = PurePosixPath(decoded)
+        return path if path.is_absolute() else None
+    except (ValueError, UnicodeError):
+        return None
+
+
+def file_path(uri):
+    """Only native, absolute local file URIs can cause a filesystem read."""
+    path = _file_uri_path(uri, windows=os.name == 'nt')
+    if path is None:
+        return None
+    try:
+        resolved = Path(path).resolve()
+        # A Windows junction/symlink can resolve a local drive path to UNC.
+        if os.name == 'nt' and not re.fullmatch(r'[A-Za-z]:', resolved.drive):
+            return None
+        return resolved
     except (ValueError, OSError, UnicodeError, RuntimeError):
         return None
 
