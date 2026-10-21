@@ -1,0 +1,360 @@
+{
+  "hello": {
+    "notes": [
+      "Hello, Gregory. Welcome to ZenSigil."
+    ]
+  },
+  "functions": {
+    "notes": [
+      "5 factorial is 120"
+    ]
+  },
+  "records": {
+    "notes": [
+      "Nikko works in operations",
+      "Skill count: 2"
+    ]
+  },
+  "duplicates": {
+    "proposals": [
+      [
+        "review",
+        {
+          "sku": "A17",
+          "reason": "Check stock"
+        }
+      ],
+      [
+        "review",
+        {
+          "sku": "B24",
+          "reason": "Check stock"
+        }
+      ]
+    ],
+    "notes": [],
+    "duplicates": 1
+  },
+  "error": {
+    "error": "E_FIELD"
+  },
+  "margins": {
+    "proposals": [
+      [
+        "review_margin",
+        {
+          "sku": "A17",
+          "profit_cents": 300
+        }
+      ],
+      [
+        "review_margin",
+        {
+          "sku": "C31",
+          "profit_cents": -50
+        }
+      ]
+    ],
+    "notes": [
+      "Skipped D09: price must be positive"
+    ]
+  },
+  "optional": {
+    "proposals": [
+      [
+        "contact_review",
+        {
+          "name": "Alex",
+          "email": "alex@example.test"
+        }
+      ]
+    ],
+    "notes": [
+      "Sam has no email address"
+    ]
+  },
+  "restock": {
+    "proposals": [
+      [
+        "reorder",
+        {
+          "sku": "A17",
+          "quantity": 105,
+          "target_days": 30
+        }
+      ],
+      [
+        "reorder",
+        {
+          "sku": "B24",
+          "quantity": 54,
+          "target_days": 30
+        }
+      ]
+    ],
+    "notes": [
+      "Skipped D09: sales missing"
+    ]
+  },
+  "shipments": {
+    "proposals": [
+      [
+        "review_shipment",
+        {
+          "shipment_id": "SHP-101",
+          "missing_units": 8
+        }
+      ],
+      [
+        "review_shipment",
+        {
+          "shipment_id": "SHP-103",
+          "extra_units": 4
+        }
+      ]
+    ],
+    "notes": []
+  },
+  "stock-review": {
+    "proposals": [
+      [
+        "reorder",
+        {
+          "sku": "A17",
+          "quantity": 105,
+          "target_days": 30
+        }
+      ],
+      [
+        "reorder",
+        {
+          "sku": "B24",
+          "quantity": 54,
+          "target_days": 30
+        }
+      ]
+    ],
+    "note_count": 3
+  },
+  "support": {
+    "proposals": [
+      [
+        "escalate",
+        {
+          "ticket_id": "T-01",
+          "queue": "priority review"
+        }
+      ]
+    ],
+    "notes": []
+  },
+  "reading-list": {
+    "proposals": [
+      [
+        "read_next",
+        {
+          "id": "B1",
+          "title": "The Small Garden"
+        }
+      ]
+    ],
+    "notes": [
+      "Learning the Night Sky: already finished or longer than your page limit.",
+      "Weekend Sketchbook: already finished or longer than your page limit."
+    ]
+  },
+  "event-capacity": {
+    "proposals": [
+      [
+        "review_capacity",
+        {
+          "id": "S1",
+          "extra_places_needed": 3
+        }
+      ]
+    ],
+    "notes": [
+      "Book club: full.",
+      "Garden workshop: 12 places available."
+    ]
+  },
+  "project-budget": {
+    "proposals": [
+      [
+        "review_budget",
+        {
+          "id": "P1",
+          "over_budget_cents": 7500,
+          "currency": "USD"
+        }
+      ]
+    ],
+    "notes": [
+      "Open-source meetup: within budget.",
+      "Seed library: within budget."
+    ]
+  },
+  "algorithms": {
+    "proposals": [],
+    "notes": [],
+    "values": [
+      {
+        "gcd": 6,
+        "factorial": 720
+      },
+      16
+    ]
+  },
+  "transformations": {
+    "proposals": [],
+    "notes": [],
+    "values": [
+      {
+        "people": [
+          {
+            "name": "Alex",
+            "age": 20
+          },
+          {
+            "name": "Zoe",
+            "age": 30
+          }
+        ],
+        "total_age": 50
+      },
+      [
+        4,
+        8,
+        12
+      ]
+    ]
+  },
+  "module-lab": {
+    "proposals": [],
+    "notes": [],
+    "values": [
+      {
+        "mean": 6.0,
+        "squares": [
+          9,
+          36,
+          81
+        ],
+        "classification": "low"
+      }
+    ]
+  },
+  "decimal-lab": {
+    "proposals": [],
+    "notes": [],
+    "values": [
+      {
+        "exact_sum": "0.3",
+        "discounted": "17.991",
+        "rounded_price": "17.99",
+        "one_third": "0.333333"
+      }
+    ]
+  },
+  "closure-lab": {
+    "proposals": [],
+    "notes": [],
+    "values": [
+      [
+        21,
+        30
+      ]
+    ]
+  },
+  "typed-data": {
+    "proposals": [],
+    "notes": [],
+    "values": [
+      {
+        "first": 7,
+        "empty": null,
+        "total": 18
+      }
+    ]
+  },
+  "collection-lab": {
+    "proposals": [],
+    "notes": [],
+    "values": [
+      {
+        "design": 2,
+        "engineering": 1
+      },
+      [
+        "Alex",
+        "Sam"
+      ],
+      {
+        "matched": [
+          2,
+          4
+        ],
+        "unmatched": [
+          1,
+          3,
+          5
+        ]
+      },
+      [
+        "drawing",
+        "research",
+        "testing",
+        "writing"
+      ]
+    ]
+  },
+  "namespace-lab": {
+    "values": [
+      {
+        "meters": [
+          1000,
+          2000,
+          3000
+        ],
+        "feet": [
+          3,
+          6,
+          9
+        ]
+      }
+    ],
+    "notes": []
+  },
+  "sequence-lab": {
+    "values": [
+      {
+        "running": [
+          4,
+          11,
+          18
+        ],
+        "total": 18,
+        "winner": "Blue",
+        "first_each_score": [
+          "Amber",
+          "Blue"
+        ],
+        "labels": {
+          "ready": 2,
+          "waiting": 1
+        },
+        "flattened": [
+          1,
+          2,
+          3
+        ],
+        "scores": {
+          "Amber": 4,
+          "Blue": 7,
+          "Coral": 7
+        }
+      }
+    ],
+    "notes": []
+  }
+}
