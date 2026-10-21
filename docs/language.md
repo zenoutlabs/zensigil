@@ -1,4 +1,4 @@
-# ZenSigil 0.6 language reference
+# ZenSigil 0.7 language reference
 
 ZenSigil is an experimental, deterministic language for readable rules. A program
 consumes a JSON object and produces structured values, notes and proposed actions. It does not call
@@ -22,7 +22,8 @@ a comment outside a string. Expressions can span lines inside `()`, `[]`, or `{}
 
 - Numbers: finite integers and decimals, including `1e3`. Arithmetic uses Python's
   double-precision floating-point behavior for decimals, not financial decimal
-  arithmetic. Use integer cents for amounts; exact fixed-point money is future work.
+  arithmetic. Use integer cents or the explicit decimal-text functions for exact amounts.
+  Decimal-text functions return strings; there is no native decimal value type.
   Magnitudes above `1e100` are rejected.
 - Strings: double-quoted with JSON escapes, e.g. `"hello\nworld"`.
 - Booleans: `true`, `false`; empty/missing value: explicit `null`.
@@ -145,7 +146,7 @@ and output size. These are guardrails for a prototype, not a multi-tenant sandbo
 
 ## Future work
 
-Module namespaces, user-defined static types, asynchronous work, real connectors,
+User-defined static types, asynchronous work, real connectors,
 scheduling, persistent approvals, persistent deduplication, financial decimal types,
 package registry, production deployment and compatibility
 guarantees are future work. Syntax may change before 1.0.
@@ -190,3 +191,11 @@ stdin and selective tests, and [editor-v05.md](editor-v05.md) for editor support
 
 See [modules-v06.md](modules-v06.md) for `use ... as`, `export fn`, private helpers,
 namespace values, source-local dependencies and imported test semantics.
+
+## 0.7 checks and project settings
+
+The grammar and runtime rules are unchanged. `lint` adds bounded type advice for
+known values. These warnings can find some errors before execution. They do not
+prove that a program is correct. See [type advice](type-diagnostics-v07.md).
+Project manifests can select input and contract files. Explicit flags override them.
+See [the quickstart](quickstart.md) and [tooling](tooling.md).

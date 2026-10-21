@@ -3,7 +3,7 @@
 ZenSigil is an experimental programming language built around readable code,
 explicit data checks, and instructions people can inspect. Its core includes
 values, collection transformations, typed function signatures, local mutable state,
-conditions, loops, pure modules and executable tests. Version 0.6 includes anonymous
+conditions, loops, pure modules and executable tests. The language includes anonymous
 functions with immutable captured bindings, nested list/record and union runtime
 annotations, namespaced imports with explicit exports, and 69 standard functions.
 Programs can calculate results, write notes and describe proposed actions for review.
@@ -51,6 +51,14 @@ For a first announcement, link the repository, working examples and known limits
 Ask for a focused review of contracts, scoping or diagnostics. For language hubs,
 check each hub's current submission criteria after the public repository exists.
 No claim about name, domain, package-name or trademark availability is made here.
+
+## Current adoption tools
+
+Version 0.7 adds project input settings, runnable project export, and advisory
+checks for known type errors. The editor and playground show these warnings.
+The checks do not execute source or prove that a program will run correctly.
+Use the [quickstart](quickstart.md) to run one useful task and share the result.
+The [claim check](reality-check-v07.md) separates demonstrated behavior from open gaps.
 
 ## Where the project goes next
 

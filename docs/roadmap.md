@@ -1,5 +1,13 @@
 # ZenSigil roadmap
 
+## Delivered in 0.7
+
+Project input defaults, project export, conservative type advice, editor and
+browser warnings, clearer first-use instructions, and tested error boundaries.
+See [the 24-outcome plan](next-v07.md) and [the 45-needs audit](adoption-audit-v07.md).
+A small independent developer trial is the next adoption step. Its results will
+help choose the next language feature.
+
 ## Delivered in 0.6
 
 Source-scoped module identities, named imports, explicit exports, private helpers,

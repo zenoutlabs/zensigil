@@ -148,3 +148,13 @@ session with explicit input objects and source modules. Use `:help` for commands
 `zensigil test project --junit results.xml` writes CI-compatible test results to
 a new file. `--list` cannot be combined with `--junit`. Full details: [REPL](repl.md)
 and [test reports](test-reports.md).
+
+## Version 0.7 project inputs and warnings
+
+`run`, `check`, `test`, and `lint` read the project's optional input and contract paths.
+Explicit flags take precedence. `pack` also accepts a project directory and uses its settings.
+Existing input files, including declared defaults, cannot be used as forced output paths.
+
+`lint` can produce `W_TYPE` advice. Use `--strict` to treat warnings as a failed check.
+The pass does not execute source or prove correctness. The playground's **Find warnings**
+button uses the same advice. See [type diagnostics](type-diagnostics-v07.md).

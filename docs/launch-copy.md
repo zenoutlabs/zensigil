@@ -1,53 +1,60 @@
-# Publication kit
+# Public copy and launch limits
 
-These are drafts for the creator to review and publish after a public repository
-or website is selected. Nothing here claims an external launch has happened.
+The repository and the 0.6 prerelease are public at
+[zenoutlabs/zensigil](https://github.com/zenoutlabs/zensigil).
+Use the latest release evidence before changing the version in an announcement.
+These text drafts are ready to review. Creating this file does not post them to a website or social account.
 
-## Repository description
+## Website entry
 
-ZenSigil: an experimental language for readable programs, validated data and
-reviewable proposals. Includes a Python interpreter, CLI and local playground.
+**ZenSigil — an experimental programming language I created.**
 
-Suggested topics: `programming-language`, `interpreter`, `language-design`,
-`developer-tools`, `rules`, `python`.
+I created ZenSigil to make programs readable and their results easy to inspect.
+I am building it with AI assistance. It has its own syntax, parser, interpreter,
+command-line tools, and a local browser playground.
 
-## Personal website introduction
+Use it for calculations, data transforms, and proposed actions that a person can
+review. It supports functions, closures, modules, runtime type checks, and tests.
+Programs run locally. They do not need an AI service or an API key.
 
-I created ZenSigil, an experimental programming language for readable programs
-and explicit intent. I'm developing its interpreter, tooling, and examples with
-AI assistance. It has its own syntax, parser, checker and evaluator, a command-line
-tool, a local browser playground, and portable programs.
+The source is MIT-licensed. ZenSigil is early software. I welcome small bug reports
+and feedback from developers who try a first program.
 
-Examples span personal reading lists, community events, project budgets, inventory
-and support. Programs validate data and describe proposed actions for review.
-The project is early, MIT-licensed, and evolving through tests and feedback.
+[Source and examples](https://github.com/zenoutlabs/zensigil) ·
+[Downloads](https://github.com/zenoutlabs/zensigil/releases) ·
+[Report a problem](https://github.com/zenoutlabs/zensigil/issues/new/choose)
 
 ## Short bio
 
-Creator of ZenSigil, an experimental programming language for readable programs
-and reviewable intent.
+Creator of ZenSigil, an experimental programming language for readable programs and inspectable results.
 
-## Release announcement draft
+## Short announcement
 
-I've built the next version of ZenSigil, a programming language I'm developing
-with AI assistance.
+I created ZenSigil, an experimental programming language, with AI assistance.
+The public project has an interpreter, a local playground, modules, tests, and
+portable program files. I would like feedback on setup, syntax, and error messages.
+Try a small program and tell me where you get stuck.
 
-Version 0.3 makes programs easier to share: export from the playground, run the
-same file from the command line, and validate both incoming data and proposed
-outputs. The examples now cover reading lists, events and project budgets as
-well as stock and support workflows.
+https://github.com/zenoutlabs/zensigil
 
-It's an experimental project with a working interpreter, documented language rules
-and automated tests. I'm interested in feedback on readability, error messages and
-the experience of writing a first program.
+## What to say now
 
-Add a verified repository/release link before posting. Avoid claims of production
-readiness, broad adoption, performance superiority or a public package-registry
-release that has not happened.
+It is reasonable to publish a website project entry or an early-project announcement.
+Use the word **experimental**. Link a release, a working example, and the known limits.
+Invite a focused trial before paying for broad advertising.
 
-## First feedback session
+Do not claim production readiness, wide adoption, a mature ecosystem, formal safety,
+full static type checking, performance superiority, or package-marketplace availability.
+Do not announce the proposed $100 trial until its terms and payment route are approved.
+No specific website, social account, or language-hub submission was made by this work.
 
-Give a volunteer the beginner course and a release bundle. Ask them to install it,
-change a rule, explain a diagnostic and share a program. Record the time and
-sticking points without coaching. Open an issue for each reproducible problem.
-Do not count prepared exercises as actual user validation.
+## Programming language or coding language?
+
+**Programming language** is the precise term. ZenSigil defines source syntax and
+rules that an interpreter executes. Python hosts the interpreter. That does not
+make ZenSigil source Python.
+
+People often use **coding language** as an informal name for a programming language.
+Coding usually means writing source code. Programming can also include program
+design, tests, debugging, and maintenance. Use "programming language" in the project
+name, bio, repository description, and language-hub entry.
