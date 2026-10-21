@@ -1,0 +1,56 @@
+(* ZenSigil 0.6 statement grammar. {} repetition; [] optional; | alternatives.
+   NAME, STRING, NUMBER, NEWLINE, INDENT, DEDENT are lexer tokens.
+   Four spaces indent a suite; blank/comment lines do not create statements.
+   Newlines inside (), [] and {} are suppressed. Strings use JSON escapes.
+   Expressions use the deterministic precedence parser in syntax.py, detailed below. *)
+program = { statement }, EOF ;
+statement = simple, NEWLINE | compound ;
+simple = ("let" | "var"), NAME, [annotation], "=", expression
+       | "set", NAME, "=", expression
+       | ("say" | "emit" | "return"), expression
+       | "require", expression, ",", expression
+       | "propose", NAME, "(", fields, ")"
+       | "use", STRING, ["as", NAME] | "break" | "continue" ;
+compound = "when", expression, suite, ["otherwise", suite]
+         | "for", NAME, "in", expression, suite
+         | "while", expression, suite
+         | ("rule" | "test"), STRING, suite
+         | ["export"], "fn", NAME, "(", [parameters], ")", ["->", type], suite ;
+suite = ":", NEWLINE, INDENT, statement, {statement}, DEDENT ;
+parameters = NAME, [annotation], {",", NAME, [annotation]}, [","] ;
+annotation = ":", type ;
+type = type_atom, {"|", type_atom} ;
+type_atom = primitive_type | ("list" | "record"), "<", type, ">" ;
+primitive_type = "any" | "number" | "integer" | "string" | "boolean"
+               | "list" | "record" | "null" | "function" | "namespace" ;
+lambda = "fn", "(", [parameters], ")", ["->", type], "=>", expression ;
+fields = key, ":", expression, {",", key, ":", expression}, [","] ;
+key = NAME | STRING ;
+arguments = expression, {",", expression}, [","] ;
+atom = NAME | NUMBER | STRING | "true" | "false" | "null"
+     | "(", expression, ")" | "[", [arguments], "]" | "{", [fields], "}"
+     | "choose", expression, "then", expression, "otherwise", expression
+     | lambda ;
+postfix = ".", NAME | "(", [arguments], ")"
+        | "[", expression, "]" | "[", [expression], ":", [expression], "]" ;
+(* Expression algorithm: read atom or prefix, then consume postfixes and binary
+   operators whose binding power is >= the current minimum. Binary RHS minimum
+   is binding power + 1 (left associative). Prefix not uses minimum 25; +/- 60.
+   Binding powers: ?? 5, or 10, and 20, comparisons/membership 30,
+   +/- 40, */% 50, postfix (always consumed before binary operators). Comparison/membership chaining is rejected.
+   choose is a prefix atom whose three expressions consume full expressions up
+   to their grammatical delimiters. This defines its interaction with operators;
+   parenthesize the entire choose expression to operate on its result.
+   A lambda body is one full expression through its enclosing delimiter;
+   parenthesize the whole lambda to call or compare that function value.
+   Type names are NAME tokens except the null keyword; quoted strings are not types.
+   Type syntax allows at most 16 generic levels, 64 type names per annotation,
+   and eight alternatives per union. A generic closing > may adjoin = or =>;
+   outside an annotation, >= remains a comparison operator.
+   Comparisons: == != < <= > >= in, and the two-token not in.
+   Nonterminal expression denotes this deterministic algorithm, not free-form text.
+   Semantic restrictions (top-level fn/rule/test/use, pure functions/modules,
+   loop and return placement, reserved names) are checked after parsing.
+   Import aliases are source-local opaque namespaces; export applies only to named
+   top-level functions. Dot access selects exported functions; namespaces are not records.
+   See syntax-v04.md, syntax-v05.md, modules-v06.md, language.md and conformance/language.zs. *)

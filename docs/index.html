@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="ZenSigil is an experimental programming language for readable programs, validated data and reviewable proposals.">
+  <title>ZenSigil — readable programs, explicit intent</title>
+  <style>
+    :root{color-scheme:light;font-family:system-ui,sans-serif;color:#15362e;background:#f8f9f3}
+    *{box-sizing:border-box}body{margin:0}a{color:inherit;text-underline-offset:5px}
+    header,main,footer{max-width:1100px;margin:auto;padding:28px}
+    header{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #cbd5c9;gap:24px}
+    .brand{font:700 35px Georgia,serif;text-decoration:none;letter-spacing:-2px}
+    .tag{font-size:13px;text-transform:uppercase;letter-spacing:1px}
+    .hero{padding:64px 0 48px;max-width:850px}
+    h1{font:normal clamp(46px,7vw,84px)/1.05 Georgia,serif;letter-spacing:-3px;margin:24px 0}
+    .lead{font:24px/1.5 Georgia,serif;max-width:700px}
+    .actions{display:flex;gap:24px;align-items:center;flex-wrap:wrap;margin-top:32px}
+    .primary{display:inline-block;padding:14px 22px;border-radius:5px;background:#15362e;color:#fff;text-decoration:none}
+    .demo{display:grid;grid-template-columns:1.3fr 1fr;border:1px solid #cbd5c9;border-radius:10px;overflow:hidden;margin-bottom:48px}
+    pre{margin:0;background:#15362e;color:#eff6db;overflow:auto;padding:30px;font:14px/1.85 monospace}
+    .result{padding:30px;background:white}.result strong{font:28px Georgia,serif}
+    p{line-height:1.65}.eyebrow{font-size:12px;letter-spacing:1.5px;text-transform:uppercase}
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;border-top:1px solid #cbd5c9;padding-top:32px}
+    h2{font:28px Georgia,serif}code{font-size:.92em}footer{border-top:1px solid #cbd5c9;font-size:13px;margin-top:44px}
+    @media(max-width:700px){.demo,.grid{grid-template-columns:1fr}header,main,footer{padding:22px}.hero{padding-top:30px}h1{letter-spacing:-2px}.tag{max-width:120px}pre{padding:20px}}
+  </style>
+</head>
+<body>
+  <header><a class="brand" href="index.html">ZenSigil</a><span class="tag">0.6 · Experimental · MIT</span></header>
+  <main>
+    <section class="hero">
+      <div class="eyebrow">A programming language taking shape</div>
+      <h1>Readable programs.<br>Explicit intent.</h1>
+      <p class="lead">Build algorithms, transform data and share readable programs with their own tests.</p>
+      <p>ZenSigil has its own syntax and interpreter, a command-line tool, and a local
+        playground. Use it for personal projects, community planning, data checks and
+        reviewable workflows. No AI model or API key is needed to run a program.</p>
+      <div class="actions"><a class="primary" href="../examples/algorithms.zs">Explore the examples</a><a href="../README.md">Install and explore</a><a href="language.md">Language reference</a></div>
+    </section>
+    <section class="demo" aria-label="Example program and result">
+      <pre><code>rule "Choose a next read":
+    for book in books:
+        when not book.finished:
+            propose read_next(
+                title: book.title,
+                explanation: "Still unread."
+            )</code></pre>
+      <div class="result"><div class="eyebrow">An example proposal</div><p><strong>read_next</strong></p>
+        <p>The Small Garden<br>Still unread.</p><p>A program describes an action for review.
+        Nothing is sent, purchased or changed outside the preview.</p></div>
+    </section>
+    <section class="grid">
+      <article><h2>Bring your data</h2><p>Use JSON inputs and optional contracts to check
+        required fields, types and limits. Failures identify the field that needs attention.</p><a href="contracts.md">Input contracts</a></article>
+      <article><h2>Inspect the result</h2><p>Read explanations, inspect the source of each
+        proposal, and add output contracts. Any invalid proposal discards the whole preview.</p><a href="proposal-contracts.md">Proposal contracts</a></article>
+      <article><h2>Share a program</h2><p>Save your work, export a portable file, and run it
+        through the same interpreter in the playground or terminal.</p><a href="cli.md">Command-line guide</a></article>
+    </section>
+    <section><h2>Ready for focused feedback</h2><p>This is an early, AI-assisted
+      language project. The source is MIT-licensed; the interpreter and playground run
+      locally. Browse the <a href="https://github.com/zenoutlabs/zensigil">public source on GitHub</a>.
+      Syntax may evolve before 1.0.</p><p><a href="../CHANGELOG.md">What changed in 0.6</a> ·
+      <a href="../CONTRIBUTING.md">How to contribute</a> · <a href="troubleshooting.md">Troubleshooting</a></p></section>
+  </main>
+  <footer>ZenSigil · An experimental language for readable programs and reviewable intent.<br>
+    This page is a static introduction. The interpreter and playground run on your own computer.</footer>
+</body>
+</html>
