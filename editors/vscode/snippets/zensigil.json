@@ -1,0 +1,79 @@
+{
+  "Typed function": {
+    "prefix": "fn",
+    "body": [
+      "fn ${1:double}(${2:value}: ${3:number}) -> ${4:number}:",
+      "    return ${5:value * 2}"
+    ],
+    "description": "A function with checked parameter and return annotations"
+  },
+  "Named test": {
+    "prefix": "test",
+    "body": [
+      "test \"${1:Example behavior}\":",
+      "    require ${2:double(21) == 42}, \"${3:Expected 42.}\""
+    ],
+    "description": "An isolated executable test"
+  },
+  "While loop": {
+    "prefix": "while",
+    "body": [
+      "var ${1:count} = 0",
+      "while ${1:count} < ${2:3}:",
+      "    ${3:emit count}",
+      "    set ${1:count} = ${1:count} + 1"
+    ],
+    "description": "A bounded-by-condition mutable loop"
+  },
+  "Module import": {
+    "prefix": "use",
+    "body": [
+      "use \"${1:lib/math.zs}\""
+    ],
+    "description": "Import functions from an explicit local module"
+  },
+  "Conditional": {
+    "prefix": "when",
+    "body": [
+      "when ${1:condition}:",
+      "    ${2:emit true}",
+      "otherwise:",
+      "    ${3:emit false}"
+    ]
+  },
+  "Namespaced import": {
+    "prefix": "useas",
+    "body": [
+      "use \"${1:lib/math.zs}\" as ${2:math}"
+    ],
+    "description": "Import a module's public functions under a source-local alias"
+  },
+  "Exported function": {
+    "prefix": "exportfn",
+    "body": [
+      "export fn ${1:double}(${2:value}: ${3:number}) -> ${4:number}:",
+      "    return ${5:value * 2}"
+    ],
+    "description": "Declare a public module function while keeping unmarked helpers private"
+  },
+  "Review proposal": {
+    "prefix": "propose",
+    "body": [
+      "propose ${1:review}(explanation: \"${2:Why this is useful}\", ${3:value}: ${4:42})"
+    ]
+  },
+  "Lambda expression": {
+    "prefix": "lambda",
+    "body": [
+      "fn(${1:item}) => ${2:item}"
+    ],
+    "description": "Pure anonymous function with lexical capture"
+  },
+  "Typed list": {
+    "prefix": "typedlist",
+    "body": [
+      "let ${1:items}: list<${2:number}> = [${3}]"
+    ],
+    "description": "Homogeneous list annotation"
+  }
+}
