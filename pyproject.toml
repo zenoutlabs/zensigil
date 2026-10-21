@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "zensigil"
+version = "0.6.0"
+description = "A readable experimental language for programs, data rules, and reviewable intent"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = []
+license = {file = "LICENSE"}
+
+[project.urls]
+Homepage = "https://github.com/zenoutlabs/zensigil"
+Repository = "https://github.com/zenoutlabs/zensigil"
+Issues = "https://github.com/zenoutlabs/zensigil/issues"
+
+[project.scripts]
+zensigil = "zensigil.__main__:main"
+
+[tool.setuptools]
+packages = ["zensigil"]
+
+[tool.setuptools.package-data]
+zensigil = ["web/*", "web/assets/*", "demo/*", "demo/lib/*", "THIRD_PARTY_NOTICES.md"]
