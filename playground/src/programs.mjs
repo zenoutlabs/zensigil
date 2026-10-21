@@ -1,14 +1,14 @@
 import {validateModules} from './modules.mjs';
 export const DRAFT_KEY = 'zensigil-draft-v1';
 export const LIBRARY_KEY = 'zensigil-library-v1';
-export const blankProgram = () => ({ format: 'zensigil-program', format_version: 1, language_version: '0.6.0', name: 'Untitled program', source: '# Write your ZenSigil program here.\nsay "Hello, ZenSigil"\n', data_text: '{}', contract_text: '', proposal_contract_text: '', modules: {} });
+export const blankProgram = () => ({ format: 'zensigil-program', format_version: 1, language_version: '0.7.0', name: 'Untitled program', source: '# Write your ZenSigil program here.\nsay "Hello, ZenSigil"\n', data_text: '{}', contract_text: '', proposal_contract_text: '', modules: {} });
 const bytes = value => new TextEncoder().encode(value).length;
 export function validateProgram(value, {allowBlankName = false} = {}) {
   if (!value || typeof value !== 'object' || Array.isArray(value) || value.format !== 'zensigil-program') throw new Error('Choose a ZenSigil program exported as a .sigil.json file.');
-  if (value.format_version !== 1 || !['0.2.0', '0.3.0', '0.4.0', '0.5.0', '0.6.0'].includes(value.language_version)) throw new Error('This program uses an unsupported format or language version. Expected format 1 and ZenSigil 0.2.0, 0.3.0, 0.4.0, 0.5.0 or 0.6.0.');
+  if (value.format_version !== 1 || !['0.2.0', '0.3.0', '0.4.0', '0.5.0', '0.6.0', '0.7.0'].includes(value.language_version)) throw new Error('This program uses an unsupported format or language version. Expected format 1 and ZenSigil 0.2.0, 0.3.0, 0.4.0, 0.5.0, 0.6.0 or 0.7.0.');
   const keys = ['format', 'format_version', 'language_version', 'name', 'source', 'data_text', 'contract_text', 'proposal_contract_text', 'modules'];
   if (Object.keys(value).some(key => !keys.includes(key))) throw new Error('This program contains unsupported fields.');
-  value = {...value, modules: validateModules(Object.hasOwn(value, 'modules') ? value.modules : {}), language_version: '0.6.0', proposal_contract_text: Object.hasOwn(value, 'proposal_contract_text') ? value.proposal_contract_text : ''};
+  value = {...value, modules: validateModules(Object.hasOwn(value, 'modules') ? value.modules : {}), language_version: '0.7.0', proposal_contract_text: Object.hasOwn(value, 'proposal_contract_text') ? value.proposal_contract_text : ''};
   for (const [field, limit] of [['name', 80], ['source', 65536], ['data_text', 1048576], ['contract_text', 262144], ['proposal_contract_text', 262144]]) {
     if (typeof value[field] !== 'string') throw new Error(`The program is missing a valid ${field} field.`);
     if (/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/u.test(value[field])) throw new Error(`${field} contains an invalid Unicode character. Replace any broken characters and try again.`);

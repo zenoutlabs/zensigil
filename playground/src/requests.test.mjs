@@ -22,6 +22,16 @@ test('empty optional contracts are omitted and an empty object remains active', 
   assert.equal(Object.hasOwn(payload, 'contract_text'), false);
   assert.equal(payload.proposal_contract_text, '{}');
 });
+test('lint carries the active source, data, and modules and preserves advisory success', async () => {
+  const program = {...blankProgram(), source: 'let n: integer = "text"\n', data_text: '{"count":2}', modules: {'lib/a.zs':'fn value():\n    return 1\n'}};
+  const result = await requestProgram('lint', program, {fetcher: async (url, options) => {
+    assert.equal(url, '/api/lint');
+    assert.deepEqual(JSON.parse(options.body), {source:program.source, modules:program.modules, data_text:program.data_text});
+    return {ok:true, json:async()=>({ok:true, mode:'lint', warnings:[{code:'W_TYPE', severity:'warning'}]})};
+  }});
+  assert.equal(result.ok, true);
+  assert.equal(result.warnings[0].severity, 'warning');
+});
 test('timeout aborts stalled requests with a recoverable message', async () => {
   let aborted = false;
   const fetcher = (_, {signal}) => new Promise((_, reject) => signal.addEventListener('abort', () => {

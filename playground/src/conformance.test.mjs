@@ -8,7 +8,7 @@ for (const fixture of fixtures) {
   test(`shared portable fixture: ${fixture.name}`, () => {
     if (fixture.valid) {
       const result = decodeProgram(fixture.text);
-      assert.equal(result.language_version, '0.6.0');
+      assert.equal(result.language_version, '0.7.0');
       assert.equal(result.data_text, '{unfinished');
     } else {
       assert.throws(() => decodeProgram(fixture.text));
