@@ -1,10 +1,16 @@
 # ZenSigil for Visual Studio Code
 
-The 0.6 extension provides an editor language server to `.zs` highlighting, snippets,
+The extension adds an editor language server to `.zs` highlighting, snippets,
 indentation and bracket support. It checks unsaved source, offers completion and
 hover signatures, navigates to local or imported function definitions, lists
 symbols, and formats a document without changing its syntax tree. It never runs
 the ZenSigil program to produce editor diagnostics.
+
+The Problems panel separates errors from advice. A syntax or binding failure has
+Error severity. An unused binding, a shadowed name, or a known type conflict has
+Warning severity. These warnings use the same checks as `zensigil lint`. Type
+advice is conservative. It does not infer unknown input values and does not replace
+the runtime type checks.
 
 Directly imported namespace aliases support exported-member completion after a dot,
 qualified hover and definitions. Private helpers stay out of unrelated source scopes.
@@ -40,6 +46,9 @@ Run `npm test` here for the transport and simulated VS Code host tests. Protocol
 and source-service tests live in `tests/test_lsp_v05.py`. A real extension-host
 harness is supplied in the source checkout at `editors/vscode/test/host.js`;
 its isolated launch recipe and validation status are in `docs/editor-v05.md`.
+The standalone harness in `test/host-standalone.js` tests the actual providers in
+an empty trusted window. Its setup and evidence rules are in `test/README.md`.
+Treat workspace import testing as a separate result.
 
 To package a VSIX using Microsoft's separately installed `vsce`, run
 `vsce package --allow-missing-repository`. Packaging needs Node.js and `vsce`;

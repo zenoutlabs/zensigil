@@ -2,7 +2,7 @@
   "name": "zensigil",
   "displayName": "ZenSigil",
   "description": "Language server, diagnostics, completion, navigation, formatting and syntax support for ZenSigil.",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "publisher": "zenoutlabs",
   "license": "MIT",
   "engines": {

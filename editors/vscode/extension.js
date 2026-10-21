@@ -20,7 +20,8 @@ function activate(context) {
     const document = vscode.workspace.textDocuments.find(doc => doc.uri.toString() === params.uri);
     if (document && params.version !== undefined && document.version !== params.version) return;
     const items = params.diagnostics.map(item => {
-      const diagnostic = new vscode.Diagnostic(asRange(item.range), item.message, vscode.DiagnosticSeverity.Error);
+      const severity = item.severity === 2 ? vscode.DiagnosticSeverity.Warning : vscode.DiagnosticSeverity.Error;
+      const diagnostic = new vscode.Diagnostic(asRange(item.range), item.message, severity);
       diagnostic.code = item.code;
       diagnostic.source = 'ZenSigil';
       return diagnostic;
