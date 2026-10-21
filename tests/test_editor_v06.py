@@ -1,12 +1,81 @@
 """Namespace-aware editor behavior against the real parser/compiler/checker."""
 import json
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 import tempfile
 import unittest
 from unittest.mock import patch
 
-from zensigil.language_tools import LanguageService, builtin_signature, utf16
+from zensigil.language_tools import LanguageService, _file_uri_path, builtin_signature, file_path, utf16
 from zensigil.lsp import Server
+
+
+class FileUriTests(unittest.TestCase):
+    def test_windows_drive_uri_conversion_on_every_host(self):
+        cases = {
+            'file:///C:/Users/Nikko/project/main.zs': 'C:/Users/Nikko/project/main.zs',
+            'file:///c%3A/Program%20Files/ZenSigil/main.zs': 'c:/Program Files/ZenSigil/main.zs',
+            'file://localhost/D:/project/%E6%96%87.zs': 'D:/project/文.zs',
+            'file:///Z:/': 'Z:/',
+        }
+        for uri, expected in cases.items():
+            with self.subTest(uri=uri):
+                found = _file_uri_path(uri, windows=True)
+                self.assertEqual(found, PureWindowsPath(expected))
+                self.assertTrue(found.is_absolute())
+                self.assertEqual(_file_uri_path(found.as_uri(), windows=True), found)
+        for uri in ['file:///tmp/project/main.zs', 'file:///C:relative.zs',
+                    'file:C:/project/main.zs', 'file:///C:/main.zs:stream',
+                    'file:///C:/folder/D:/main.zs', 'file:///C|/project/main.zs']:
+            with self.subTest(uri=uri):
+                self.assertIsNone(_file_uri_path(uri, windows=True))
+
+    def test_posix_uri_conversion_preserves_absolute_names(self):
+        cases = {
+            'file:///tmp/Zen%20Sigil/main.zs': '/tmp/Zen Sigil/main.zs',
+            'file://localhost/tmp/%E6%96%87.zs': '/tmp/文.zs',
+            'file:///tmp/percent%252Fname.zs': '/tmp/percent%2Fname.zs',
+            'file:///tmp/hash%23and%3F.zs': '/tmp/hash#and?.zs',
+            'file:///C:/a.zs': '/C:/a.zs',
+        }
+        for uri, expected in cases.items():
+            with self.subTest(uri=uri):
+                found = _file_uri_path(uri, windows=False)
+                self.assertEqual(found, PurePosixPath(expected))
+                self.assertEqual(_file_uri_path(found.as_uri(), windows=False), found)
+
+    def test_remote_relative_unc_and_encoded_separators_are_rejected_before_io(self):
+        rejected = ['https://example.com/main.zs', 'untitled:main.zs', 'file:main.zs',
+                    'file://server/share/main.zs', 'file://localhost:80/C:/main.zs',
+                    'file://user@localhost/C:/main.zs', 'file:////server/share/main.zs',
+                    'file:////?/C:/main.zs', 'file:///C:/folder\\main.zs',
+                    'file:///C:/folder%2f..%2fmain.zs', 'file:///C:/folder%5Cmain.zs',
+                    'file://localhost/%2Fserver/share/main.zs',
+                    'file:///C:/main.zs?download=1', 'file:///C:/main.zs#fragment',
+                    'file:///C:/bad%00name.zs', 'file:///C:/bad%FFname.zs',
+                    'file:///C:/bad%name.zs', 'file:///C:/bad%2name.zs',
+                    'file:///C:/bad\nname.zs', 'file:///C:/bad%09name.zs', 'file://[', None]
+        for uri in rejected:
+            for windows in (False, True):
+                with self.subTest(uri=uri, windows=windows):
+                    self.assertIsNone(_file_uri_path(uri, windows=windows))
+            with self.subTest(uri=uri), patch('pathlib.Path.resolve', side_effect=AssertionError('Invalid URI reached filesystem')):
+                self.assertIsNone(file_path(uri))
+
+    def test_native_roundtrip_declared_workspace_and_unsaved_import(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = (Path(temporary) / 'Zen Sigil 文').resolve()
+            root.mkdir()
+            main, module = root / 'main.zs', root / 'math.zs'
+            self.assertEqual(file_path(root.as_uri()), root)
+            self.assertEqual(file_path(module.as_uri()), module)
+            service = LanguageService([root.as_uri()])
+            self.assertEqual(service.roots, (root,))
+            service.open(main.as_uri(), 'use "math.zs" as math\nemit math.double(2)\n', 1)
+            service.open(module.as_uri(), 'export fn double(value):\n    return value * 2\n', 1)
+            self.assertEqual(service.root(main.as_uri()), root)
+            self.assertEqual(service.diagnostics(main.as_uri())[main.as_uri()], [])
+            definition = service.definition(main.as_uri(), {'line': 1, 'character': 12})
+            self.assertEqual(definition['uri'], module.as_uri())
 
 
 class NamespaceEditorTests(unittest.TestCase):

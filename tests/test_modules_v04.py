@@ -79,7 +79,7 @@ class ModuleTests(unittest.TestCase):
             self.assertEqual(found.exception.code,'E_IMPORT')
 
     def test_executable_conformance_corpus(self):
-        source=(Path(__file__).resolve().parents[1]/'conformance/language.zs').read_text()
+        source=(Path(__file__).resolve().parents[1]/'conformance/language.zs').read_text(encoding='utf-8')
         result=test_program(source)
         self.assertTrue(result['ok'],result);self.assertEqual(result['total'],8)
 

@@ -68,13 +68,15 @@ class ToolingCLITests(unittest.TestCase):
         source = self.directory / 'source.zs'
         source.write_text('emit 1+2# keep\n')
         source.chmod(0o640)
+        # Windows exposes its supported permission bits, not POSIX group modes.
+        original_mode = source.stat().st_mode & 0o777
         expected = 'emit 1 + 2  # keep\n'
         self.assertEqual(self.cli('fmt', source).stdout, expected)
         self.assertEqual(source.read_text(), 'emit 1+2# keep\n')
         self.assertEqual(self.cli('fmt', source, '--check').returncode, 1)
         self.assertEqual(self.cli('fmt', source, '--write').returncode, 0)
         self.assertEqual(source.read_text(), expected)
-        self.assertEqual(source.stat().st_mode & 0o777, 0o640)
+        self.assertEqual(source.stat().st_mode & 0o777, original_mode)
         self.assertEqual(self.cli('fmt', source, '--check').returncode, 0)
         self.assertFalse(list(self.directory.glob('.zensigil-format-*')))
 
