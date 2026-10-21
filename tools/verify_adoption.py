@@ -47,7 +47,10 @@ def verify():
         for name, content in files.items():
             target = project / name
             target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_text(content, encoding="utf-8")
+            # Use LF fixtures on Windows too; fmt --check intentionally rejects
+            # CRLF source. Explicit newline also works with Python 3.9.
+            with target.open("w", encoding="utf-8", newline="\n") as stream:
+                stream.write(content)
         assert cli("check", "latency-review", "--json")["ok"]
         result = cli("run", "latency-review", "--json")
         assert result["values"] == [{"count": 3, "total_ms": 300, "average_ms": 100}], result
