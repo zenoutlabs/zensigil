@@ -1,0 +1,9 @@
+{
+  "inventory": [
+    {"sku": "A17", "name": "Cedar storage set", "stock": 15, "daily_sales": 4, "discontinued": false},
+    {"sku": "B24", "name": "Linen organizer", "stock": 6, "daily_sales": 2, "discontinued": false},
+    {"sku": "C31", "name": "Bamboo tray", "stock": 180, "daily_sales": 3, "discontinued": false},
+    {"sku": "D09", "name": "Ceramic holder", "stock": 8, "daily_sales": null, "discontinued": false},
+    {"sku": "E55", "name": "Retired gift set", "stock": 0, "daily_sales": 5, "discontinued": true}
+  ]
+}

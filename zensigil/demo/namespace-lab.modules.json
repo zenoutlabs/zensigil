@@ -1,0 +1,4 @@
+{
+  "lib/metric.zs": "fn factor() -> number:\n    return 1000\n\nexport fn to_meters(value: number) -> number:\n    return value * factor()\n\ntest \"Conversion\":\n    require to_meters(2) == 2000, \"Two kilometers are 2000 meters.\"\n",
+  "lib/imperial.zs": "fn factor() -> number:\n    return 3\n\nexport fn to_feet(value: number) -> number:\n    return value * factor()\n\ntest \"Conversion\":\n    require to_feet(2) == 6, \"Two yards are six feet.\"\n"
+}

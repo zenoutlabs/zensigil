@@ -1,0 +1,46 @@
+{
+  "type": "object",
+  "properties": {
+    "sessions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "capacity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100000
+          },
+          "registered": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000000000
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "capacity",
+          "registered"
+        ],
+        "additionalProperties": false
+      },
+      "maxItems": 400,
+      "uniqueBy": "id"
+    }
+  },
+  "required": [
+    "sessions"
+  ],
+  "additionalProperties": false
+}

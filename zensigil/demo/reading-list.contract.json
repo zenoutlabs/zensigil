@@ -1,0 +1,50 @@
+{
+  "type": "object",
+  "properties": {
+    "max_pages": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10000
+    },
+    "books": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "pages": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10000
+          },
+          "finished": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "pages",
+          "finished"
+        ],
+        "additionalProperties": false
+      },
+      "maxItems": 400,
+      "uniqueBy": "id"
+    }
+  },
+  "required": [
+    "max_pages",
+    "books"
+  ],
+  "additionalProperties": false
+}

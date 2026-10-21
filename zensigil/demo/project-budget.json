@@ -1,0 +1,23 @@
+{
+  "currency": "USD",
+  "projects": [
+    {
+      "id": "P1",
+      "title": "Community mural",
+      "budget_cents": 50000,
+      "spent_cents": 57500
+    },
+    {
+      "id": "P2",
+      "title": "Open-source meetup",
+      "budget_cents": 20000,
+      "spent_cents": 20000
+    },
+    {
+      "id": "P3",
+      "title": "Seed library",
+      "budget_cents": 10000,
+      "spent_cents": 4500
+    }
+  ]
+}

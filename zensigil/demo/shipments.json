@@ -1,0 +1,7 @@
+{
+  "shipments": [
+    {"id": "SHP-101", "expected": 100, "received": 92},
+    {"id": "SHP-102", "expected": 50, "received": 50},
+    {"id": "SHP-103", "expected": 20, "received": 24}
+  ]
+}

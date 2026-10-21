@@ -1,0 +1,36 @@
+{
+  "escalate": {
+    "type": "object",
+    "properties": {
+      "ticket_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
+      },
+      "queue": {
+        "type": "string",
+        "enum": [
+          "priority review"
+        ]
+      },
+      "explanation": {
+        "type": "string",
+        "minLength": 1
+      },
+      "evidence": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "minItems": 1
+      }
+    },
+    "required": [
+      "ticket_id",
+      "queue",
+      "explanation",
+      "evidence"
+    ],
+    "additionalProperties": false
+  }
+}

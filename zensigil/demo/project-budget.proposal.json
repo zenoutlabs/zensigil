@@ -1,0 +1,43 @@
+{
+  "review_budget": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
+      },
+      "over_budget_cents": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "currency": {
+        "type": "string",
+        "enum": [
+          "USD",
+          "EUR",
+          "GBP"
+        ]
+      },
+      "explanation": {
+        "type": "string",
+        "minLength": 1
+      },
+      "evidence": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "minItems": 1
+      }
+    },
+    "required": [
+      "id",
+      "over_budget_cents",
+      "currency",
+      "explanation",
+      "evidence"
+    ],
+    "additionalProperties": false
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "max_pages": 250,
+  "books": [
+    {
+      "id": "B1",
+      "title": "The Small Garden",
+      "pages": 180,
+      "finished": false
+    },
+    {
+      "id": "B2",
+      "title": "Learning the Night Sky",
+      "pages": 420,
+      "finished": false
+    },
+    {
+      "id": "B3",
+      "title": "Weekend Sketchbook",
+      "pages": 96,
+      "finished": true
+    }
+  ]
+}

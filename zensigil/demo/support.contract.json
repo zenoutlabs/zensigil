@@ -1,0 +1,14 @@
+{
+  "title": "Support tickets", "type": "object", "required": ["tickets"],
+  "properties": {"tickets": {
+    "type": "array", "maxItems": 1000, "uniqueBy": "id",
+    "items": {
+      "type": "object", "required": ["id", "priority", "waiting_hours"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1, "maxLength": 80},
+        "priority": {"type": "string", "enum": ["high", "normal", "low"]},
+        "waiting_hours": {"type": "number", "minimum": 0}
+      }
+    }
+  }}
+}
