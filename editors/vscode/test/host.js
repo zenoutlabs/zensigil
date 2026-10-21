@@ -58,7 +58,12 @@ exports.run = async function run() {
     report.checks.push('Real document-symbol provider lists local declarations.');
     const edits = await vscode.commands.executeCommand('vscode.executeFormatDocumentProvider', mainUri, {tabSize: 4, insertSpaces: true});
     assert(edits.length > 0);
-    assert(edits[0].newText.includes('let amount = 3'));
+    // VS Code can reduce a whole-document provider edit into smaller edits.
+    // Apply the returned edits and verify their result, not their wire shape.
+    const formatted = new vscode.WorkspaceEdit();
+    for (const edit of edits) formatted.replace(mainUri, edit.range, edit.newText);
+    assert(await vscode.workspace.applyEdit(formatted));
+    assert(document.getText().includes('let amount = 3'));
     report.checks.push('Real formatting provider returns verified source edits.');
     const imported = await vscode.workspace.openTextDocument(moduleUri);
     const replacement = new vscode.WorkspaceEdit();
