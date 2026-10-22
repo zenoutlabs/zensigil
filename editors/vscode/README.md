@@ -3,7 +3,7 @@
 The extension adds an editor language server to `.zs` highlighting, snippets,
 indentation and bracket support. It checks unsaved source, offers completion and
 hover signatures, navigates to local or imported function definitions, lists
-symbols, and formats a document without changing its syntax tree. It never runs
+symbols, finds references, and formats a document without changing its syntax tree. It never runs
 the ZenSigil program to produce editor diagnostics.
 
 The Problems panel separates errors from advice. A syntax or binding failure has
@@ -19,8 +19,8 @@ This is direct alias resolution, not general static type inference. See
 
 Install the release VSIX through **Extensions: Install from VSIX**. Install the
 matching ZenSigil wheel in a Python 3.9+ environment, then set `zensigil.pythonPath`
-to that environment's Python executable. Reload the window after changing the
-interpreter or workspace folders. The path is a machine setting and must identify
+to that environment's Python executable. Changing the interpreter restarts the
+server. Workspace folder changes update imports without a window reload. The path is a machine setting and must identify
 one executable, without shell arguments. The extension starts it as
 `python -I -m zensigil lsp`; isolated Python loads the installed package, rather
 than a similarly named module inside the workspace.
@@ -32,9 +32,12 @@ modules are read. Unsaved module buffers override their disk copies, including
 new files. The extension does not download dependencies or open a network port.
 It never starts a process in an untrusted workspace.
 
-Use **ZenSigil: Check Program** to refresh diagnostics after imported files change
-outside the editor. Ordinary edits are checked automatically. An unopened file
-changed on disk is not watched continuously. Completion/hover/navigation use valid
+The extension watches workspace `.zs` files and refreshes import diagnostics after
+a disk change. Use **ZenSigil: Check Program** if a path is excluded from watching.
+Use **ZenSigil: Restart Language Server** after a server failure. It resends open
+source and clears old diagnostics. Find References searches open programs and
+their explicit imports. It does not scan unopened programs. Results are limited
+to 1,000 locations and 512 KiB; larger results return an error. Completion/hover/navigation use valid
 parsed source; incomplete syntax retains keyword and standard function completion.
 Input JSON and runtime-only type checks are not inferred by the editor.
 
