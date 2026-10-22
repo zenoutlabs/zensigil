@@ -54,11 +54,12 @@ No claim about name, domain, package-name or trademark availability is made here
 
 ## Current adoption tools
 
-Version 0.7 adds project input settings, runnable project export, and advisory
-checks for known type errors. The editor and playground show these warnings.
+Version 0.8 includes project tests in portable files and restores projects on
+unpack. It adds editor reference search, refresh, and restart. Version 0.7 added
+project input settings and advisory checks for known type errors. The editor and playground show these warnings.
 The checks do not execute source or prove that a program will run correctly.
 Use the [quickstart](quickstart.md) to run one useful task and share the result.
-The [claim check](reality-check-v07.md) separates demonstrated behavior from open gaps.
+The [release evidence](release-evidence-v08.md) separates demonstrated behavior from open gaps.
 
 ## Where the project goes next
 

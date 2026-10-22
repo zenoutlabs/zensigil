@@ -122,3 +122,31 @@ setting, including an invalid override, which reports an error.
 `lint --strict` can now fail on new `W_TYPE` warnings. Plain lint remains advisory.
 Check and run keep their existing meanings. The type pass does not infer all types;
 see [its limits](type-diagnostics-v07.md). This is a pre-1.0 release.
+
+## Version 0.8
+
+Portable format 1 adds an optional `tests` source map. Older files get an empty
+map. The 0.8 reader accepts 0.2–0.7 files. Project manifests accept 0.4–0.7.
+The optional `entry_path` preserves the entry source identity when another test
+imports it. Older files keep their anonymous entry identity. New files use 0.8.0.
+Older readers reject the new version. Keep the older release
+if you need to reproduce its behavior.
+
+`unpack` and `example` now create a project manifest. It restores inputs, contracts,
+and test entries. Test commands run shared module tests once, under a shared
+100,000-step limit. A previous count could include the same module test more than
+once. Test reports share a 1 MiB compact JSON limit. A report that reaches this
+limit fails with `E_TEST_LIMIT` and sets `stopped_early`. Its counts cover the
+retained results. Read [portable projects and tests](portable-tests-v08.md).
+
+Collection builders validate each result before continuing. Retained sort keys
+must fit the value budget. Copying collection values consumes execution steps.
+These corrections can change which error appears first or make large programs
+reach their limit earlier. `max_steps` in Python run/test accepts integers from
+1 to 1,000,000. Invalid values return `E_INPUT`. Read the
+[runtime change details](runtime-stability-v08.md).
+
+The grammar and reserved words are unchanged. Error text and delimiter locations
+are more precise. Unexpected indentation now reports `E_INDENT`. Find References
+and editor restart are additive. Reference searches cover open programs and their
+explicit imports; they do not scan every source file in a workspace.

@@ -8,6 +8,11 @@ requires setuptools and wheel in the build environment.
 
 From the repository root:
 
+Use a fresh checkout for release builds. If you reuse a checkout, remove its
+generated `build/` folder before you build the wheel. Setuptools can retain old
+browser assets there after a new browser build removes them from source.
+Keep any needed files outside that generated folder first.
+
 ```sh
 python3 -m unittest discover -s tests -v
 cd playground
@@ -65,7 +70,7 @@ Use the tested release candidate as the publication input. Before upload:
   and review the current repository state.
 - Review the included files and license attribution.
 - Push the tested source and inspect actual CI results.
-- Tag the tested commit `v0.7.0` and attach the ZIP, wheel, examples and checksums to
+- Tag the tested commit `v0.8.0` and attach the ZIP, wheel, examples and checksums to
   a GitHub release. Use the changelog as release notes.
 - Add repository and release links to the project landing page and README.
 - Publish the static introduction only after selecting a hosting destination.
@@ -86,4 +91,26 @@ Open http://127.0.0.1:8767/docs/index.html. This static introduction requires no
 backend and includes documentation links. It does not execute ZenSigil.
 
 See [launch-copy.md](launch-copy.md) for publication text and
-[release-evidence-v07.md](release-evidence-v07.md) for the recorded verification and publication status.
+[release-evidence-v08.md](release-evidence-v08.md) for the recorded verification and publication status.
+
+## Strict release check
+
+For a public release, include the source ZIP, wheel, VSIX, fourteen portable
+examples, and checksum manifest. Run:
+
+```sh
+python3 tools/verify_release.py dist --require-distributables
+```
+
+This rejects missing packages, empty or malformed manifests, duplicate names,
+unsafe paths, and checksum mismatches. It checks example values, proposal fields,
+notes, and duplicate counts against independent fixtures. Checks remain active
+with `python -O`. A checksum does not prove the publisher's identity.
+
+When a wheel is present, the verifier compares its complete runtime file list and
+file bytes with the source ZIP. This includes browser assets. Stale, missing, or
+changed runtime files fail verification. The wheel can contain only the runtime
+package and its package metadata.
+
+The regular verifier permits source-only developer packages without wheel or VSIX.
+Do not use that weaker mode as proof that a full public release is complete.

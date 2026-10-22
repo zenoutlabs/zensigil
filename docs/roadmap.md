@@ -1,5 +1,16 @@
 # ZenSigil roadmap
 
+## Delivered in 0.8
+
+Portable projects carry separate tests. Unpack restores a runnable project. The
+playground runs those tests. Editor reference search, disk refresh, and restart
+reduce common editing problems. Collection limits and source errors are more
+consistent. Release checks reject incomplete artifacts.
+
+See [the 45-step plan](next-v08.md), [evidence](release-evidence-v08.md), and
+[stable-release conditions](stability.md). Outside developer use remains the next
+evidence milestone. Add major syntax only when real programs show a need.
+
 ## Delivered in 0.7
 
 Project input defaults, project export, conservative type advice, editor and

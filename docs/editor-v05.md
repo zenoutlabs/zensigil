@@ -1,4 +1,7 @@
-# ZenSigil 0.5 editor protocol
+# ZenSigil editor protocol
+
+This protocol started in 0.5. The current additions are documented in
+[editor changes in 0.8](editor-v08.md). The recorded 0.5 host result below is historical.
 
 `zensigil lsp` runs a standard-library-only language server over stdin/stdout.
 Other editors can start that command and use its advertised capabilities. It
@@ -16,6 +19,9 @@ The VS Code extension is a small client for this same server.
 | `textDocument/completion` | Keywords, standard function signatures and visible parsed declarations |
 | `textDocument/hover` | Function signatures and binding declarations, returned as plain text |
 | `textDocument/definition` | Lexical locals, parameters and top-level functions, including explicit imported modules |
+| `textDocument/references` | Source references in open programs and their explicit imports; bounded and source-aware |
+| `workspace/didChangeWorkspaceFolders` | Update declared roots and recheck open programs |
+| `workspace/didChangeWatchedFiles` | Refresh explicit imports after bounded disk change events |
 | `textDocument/documentSymbol` | Functions, bindings, parameters, rules and tests in the requested document |
 | `textDocument/formatting` | Whole-document edit verified by the formatter; invalid source is preserved |
 
@@ -29,9 +35,9 @@ The wire format follows [Microsoft's LSP 3.17 base protocol](https://github.com/
 ASCII CRLF headers, a required byte-counted `Content-Length`, and UTF-8 JSON-RPC.
 Position fields and full-text change notifications follow the advertised LSP
 capabilities. The client uses the corresponding [VS Code language providers](https://code.visualstudio.com/api/language-extensions/programmatic-language-features)
-to display results. These are a declared subset of LSP features; rename, references,
-semantic tokens, signature-help popups, incremental edits and dynamic workspace
-changes are not implemented.
+to display results. These are a declared subset of LSP features. Rename, semantic tokens,
+signature-help popups and incremental edits are not implemented. Reference search
+does not scan unopened programs. Workspace roots can change without a reload.
 
 ## Source boundaries and limits
 
@@ -46,8 +52,8 @@ Open source overlays disk modules, including unsaved new modules. A changed modu
 causes open importers to be checked again. Module diagnostics retain the target
 file URI and code-point locations are converted to UTF-16 editor positions.
 The source service never saves the buffers. Versioned diagnostics allow the client
-to discard stale results. Imports changed outside the editor are refreshed by
-**ZenSigil: Check Program**, or by another source edit; there is no file watcher.
+to discard stale results. The extension watches workspace `.zs` files and refreshes imports after changes.
+**ZenSigil: Check Program** remains available when a path is excluded from watching.
 
 Bounds are 64 open buffers, 64 KiB per source, 32 modules, 256 KiB per module graph,
 eight import levels, 8 KiB of framing headers and 1 MiB per JSON message. Oversize
@@ -69,7 +75,8 @@ time beyond the ZenSigil wheel.
 Both the extension manifest and the activation code enforce a trusted workspace.
 This follows [VS Code's workspace-trust model](https://code.visualstudio.com/api/extension-guides/workspace-trust).
 The machine-scoped interpreter setting cannot be supplied by repository workspace
-configuration. Change the interpreter or workspace folders and reload the window.
+configuration. Changing the interpreter restarts the server. Workspace folder changes update
+the declared roots. Use **ZenSigil: Restart Language Server** after a server failure.
 The built-in Python service remains independently usable by other LSP clients.
 
 ## Verification and real-host recipe
