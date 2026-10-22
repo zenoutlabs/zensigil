@@ -6,6 +6,10 @@ export async function requestProgram(mode, program, {signal, timeoutMs = 15000, 
   let timedOut = false;
   const timer = setTimeout(() => {timedOut = true; controller.abort();}, timeoutMs);
   const payload = {source: program.source, modules: program.modules || {}};
+  if (mode === 'test') {
+    payload.tests = program.tests || {};
+    if (Object.hasOwn(program, 'entry_path')) payload.entry_path = program.entry_path;
+  }
   if (mode !== 'test' && mode !== 'format') payload.data_text = program.data_text;
   if (program.contract_text.trim()) payload.contract_text = program.contract_text;
   if (program.proposal_contract_text.trim()) payload.proposal_contract_text = program.proposal_contract_text;

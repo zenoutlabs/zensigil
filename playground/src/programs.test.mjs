@@ -42,7 +42,7 @@ test('delayed saved-program opening reads the snapshot written by Save & open', 
 test('migrates v0.2 portable files, browser library, and unfinished drafts losslessly', () => {
   const old = {...blankProgram(), language_version: '0.2.0', data_text: '{unfinished', contract_text: '[unfinished'};
   delete old.proposal_contract_text;
-  const expected = {...old, language_version: '0.7.0', proposal_contract_text: ''};
+  const expected = {...old, language_version: '0.8.0', proposal_contract_text: ''};
   assert.deepEqual(decodeProgram(JSON.stringify(old)), expected);
   assert.deepEqual(readLibrary({getItem: () => JSON.stringify({version: 1, programs: [{id: 'old', program: old}]})})[0].program, expected);
   assert.deepEqual(decodeDraft(JSON.stringify({version: 1, program: {...old, name: ' '}})), {...expected, name: ' '});
