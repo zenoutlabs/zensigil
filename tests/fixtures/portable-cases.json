@@ -113,5 +113,95 @@
     "name": "0.7.0 with explicit namespace module source",
     "valid": true,
     "text": "{\"format\": \"zensigil-program\", \"format_version\": 1, \"language_version\": \"0.7.0\", \"name\": \"Shared program\", \"source\": \"say \\\"Hello\\\"\\n\", \"data_text\": \"{unfinished\", \"contract_text\": \"\", \"modules\": {\"lib/current.zs\": \"export fn double(n):\\n    return n * 2\\n\"}}"
+  },
+  {
+    "name": "0.8 with separate unfinished tests",
+    "valid": true,
+    "text": "{\"format\": \"zensigil-program\", \"format_version\": 1, \"language_version\": \"0.8.0\", \"name\": \"Shared program\", \"source\": \"say \\\"Hello\\\"\\n\", \"data_text\": \"{unfinished\", \"contract_text\": \"\", \"tests\": {\"tests/a.zs\": \"test \\\"Later\\\":\\n    require (\"}}"
+  },
+  {
+    "name": "0.8 absent test map",
+    "valid": true,
+    "text": "{\"format\": \"zensigil-program\", \"format_version\": 1, \"language_version\": \"0.8.0\", \"name\": \"Shared program\", \"source\": \"say \\\"Hello\\\"\\n\", \"data_text\": \"{unfinished\", \"contract_text\": \"\"}"
+  },
+  {
+    "name": "test map cannot be null",
+    "valid": false,
+    "text": "{\"format\": \"zensigil-program\", \"format_version\": 1, \"language_version\": \"0.8.0\", \"name\": \"Shared program\", \"source\": \"say \\\"Hello\\\"\\n\", \"data_text\": \"{unfinished\", \"contract_text\": \"\", \"tests\": null}"
+  },
+  {
+    "name": "test map cannot be list",
+    "valid": false,
+    "text": "{\"format\": \"zensigil-program\", \"format_version\": 1, \"language_version\": \"0.8.0\", \"name\": \"Shared program\", \"source\": \"say \\\"Hello\\\"\\n\", \"data_text\": \"{unfinished\", \"contract_text\": \"\", \"tests\": []}"
+  },
+  {
+    "name": "test paths cannot escape root",
+    "valid": false,
+    "text": "{\"format\": \"zensigil-program\", \"format_version\": 1, \"language_version\": \"0.8.0\", \"name\": \"Shared program\", \"source\": \"say \\\"Hello\\\"\\n\", \"data_text\": \"{unfinished\", \"contract_text\": \"\", \"tests\": {\"../escape.zs\": \"\"}}"
+  },
+  {
+    "name": "test paths ignore case for collision",
+    "valid": false,
+    "text": "{\"format\": \"zensigil-program\", \"format_version\": 1, \"language_version\": \"0.8.0\", \"name\": \"Shared program\", \"source\": \"say \\\"Hello\\\"\\n\", \"data_text\": \"{unfinished\", \"contract_text\": \"\", \"tests\": {\"tests/a.zs\": \"\", \"tests/A.zs\": \"\"}}"
+  },
+  {
+    "name": "test path cannot be directory",
+    "valid": false,
+    "text": "{\"format\": \"zensigil-program\", \"format_version\": 1, \"language_version\": \"0.8.0\", \"name\": \"Shared program\", \"source\": \"say \\\"Hello\\\"\\n\", \"data_text\": \"{unfinished\", \"contract_text\": \"\", \"tests\": {\"a.zs\": \"\", \"a.zs/b.zs\": \"\"}}"
+  },
+  {
+    "name": "test and module path case conflict",
+    "valid": false,
+    "text": "{\"format\": \"zensigil-program\", \"format_version\": 1, \"language_version\": \"0.8.0\", \"name\": \"Shared program\", \"source\": \"say \\\"Hello\\\"\\n\", \"data_text\": \"{unfinished\", \"contract_text\": \"\", \"tests\": {\"LIB/a.zs\": \"\"}, \"modules\": {\"lib/a.zs\": \"\"}}"
+  },
+  {
+    "name": "test and module exact same source",
+    "valid": true,
+    "text": "{\"format\": \"zensigil-program\", \"format_version\": 1, \"language_version\": \"0.8.0\", \"name\": \"Shared program\", \"source\": \"say \\\"Hello\\\"\\n\", \"data_text\": \"{unfinished\", \"contract_text\": \"\", \"tests\": {\"lib/a.zs\": \"same\"}, \"modules\": {\"lib/a.zs\": \"same\"}}"
+  },
+  {
+    "name": "test and module different source",
+    "valid": false,
+    "text": "{\"format\": \"zensigil-program\", \"format_version\": 1, \"language_version\": \"0.8.0\", \"name\": \"Shared program\", \"source\": \"say \\\"Hello\\\"\\n\", \"data_text\": \"{unfinished\", \"contract_text\": \"\", \"tests\": {\"lib/a.zs\": \"one\"}, \"modules\": {\"lib/a.zs\": \"two\"}}"
+  },
+  {
+    "name": "test source invalid unicode",
+    "valid": false,
+    "text": "{\"format\": \"zensigil-program\", \"format_version\": 1, \"language_version\": \"0.8.0\", \"name\": \"Shared program\", \"source\": \"say \\\"Hello\\\"\\n\", \"data_text\": \"{unfinished\", \"contract_text\": \"\", \"tests\": {\"test.zs\": \"\\ud800\"}}"
+  },
+  {
+    "name": "test source must be text",
+    "valid": false,
+    "text": "{\"format\": \"zensigil-program\", \"format_version\": 1, \"language_version\": \"0.8.0\", \"name\": \"Shared program\", \"source\": \"say \\\"Hello\\\"\\n\", \"data_text\": \"{unfinished\", \"contract_text\": \"\", \"tests\": {\"test.zs\": 42}}"
+  },
+  {
+    "name": "0.8 explicit entry path",
+    "valid": true,
+    "text": "{\"format\": \"zensigil-program\", \"format_version\": 1, \"language_version\": \"0.8.0\", \"name\": \"Shared program\", \"source\": \"say \\\"Hello\\\"\\n\", \"data_text\": \"{unfinished\", \"contract_text\": \"\", \"entry_path\": \"src/main.zs\"}"
+  },
+  {
+    "name": "entry path cannot be null",
+    "valid": false,
+    "text": "{\"format\": \"zensigil-program\", \"format_version\": 1, \"language_version\": \"0.8.0\", \"name\": \"Shared program\", \"source\": \"say \\\"Hello\\\"\\n\", \"data_text\": \"{unfinished\", \"contract_text\": \"\", \"entry_path\": null}"
+  },
+  {
+    "name": "entry path cannot escape root",
+    "valid": false,
+    "text": "{\"format\": \"zensigil-program\", \"format_version\": 1, \"language_version\": \"0.8.0\", \"name\": \"Shared program\", \"source\": \"say \\\"Hello\\\"\\n\", \"data_text\": \"{unfinished\", \"contract_text\": \"\", \"entry_path\": \"../main.zs\"}"
+  },
+  {
+    "name": "entry module content matches",
+    "valid": true,
+    "text": "{\"format\": \"zensigil-program\", \"format_version\": 1, \"language_version\": \"0.8.0\", \"name\": \"Shared program\", \"source\": \"say \\\"Hello\\\"\\n\", \"data_text\": \"{unfinished\", \"contract_text\": \"\", \"entry_path\": \"main.zs\", \"modules\": {\"main.zs\": \"say \\\"Hello\\\"\\n\"}}"
+  },
+  {
+    "name": "entry module content differs",
+    "valid": false,
+    "text": "{\"format\": \"zensigil-program\", \"format_version\": 1, \"language_version\": \"0.8.0\", \"name\": \"Shared program\", \"source\": \"say \\\"Hello\\\"\\n\", \"data_text\": \"{unfinished\", \"contract_text\": \"\", \"entry_path\": \"main.zs\", \"modules\": {\"main.zs\": \"different\"}}"
+  },
+  {
+    "name": "entry path case alias",
+    "valid": false,
+    "text": "{\"format\": \"zensigil-program\", \"format_version\": 1, \"language_version\": \"0.8.0\", \"name\": \"Shared program\", \"source\": \"say \\\"Hello\\\"\\n\", \"data_text\": \"{unfinished\", \"contract_text\": \"\", \"entry_path\": \"main.zs\", \"tests\": {\"Main.zs\": \"say \\\"Hello\\\"\\n\"}}"
   }
 ]
