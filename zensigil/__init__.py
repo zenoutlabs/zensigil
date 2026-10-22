@@ -3,11 +3,11 @@ from .contracts import contract_diagnostics, input_diagnostics, diagnostic
 from .proposals import proposal_contract_diagnostics, proposal_diagnostics
 from .checker import Checker
 from .errors import SigilError
-from .runtime import Runtime, validate_value, compact, MAX_JSON_BYTES
+from .runtime import Runtime, validate_value, validate_step_limit, compact, MAX_JSON_BYTES
 from .modules import compile_program
-from .testing import run_test_program
+from .testing import TestResultBudget, bound_test_result, run_test_program
 
-__version__ = "0.7.0"
+__version__ = "0.8.0"
 
 
 class ContractFailure(Exception):
@@ -87,6 +87,7 @@ def check(source, data=None, *, contract=None, proposal_contract=None, modules=N
 
 def run(source, data=None, *, max_steps=100000, contract=None, proposal_contract=None, modules=None):
     try:
+        validate_step_limit(max_steps)
         if data is None:
             data = {}
         program, _ = prepare(source, data, contract, proposal_contract, modules)
@@ -108,24 +109,35 @@ def run(source, data=None, *, max_steps=100000, contract=None, proposal_contract
 def test(source, data=None, *, max_steps=100000, contract=None, proposal_contract=None, modules=None, name_filter=None, list_only=False):
     """Check a program and run only its explicit isolated test blocks."""
     try:
+        validate_step_limit(max_steps)
         actual = {} if data is None else data
         program, _ = prepare(source, data, contract, proposal_contract, modules)
         if name_filter is not None and type(name_filter) is not str:
             raise SigilError("E_INPUT", "Test name_filter must be text.")
         selected = tuple(node for node in program if node.kind != "test" or name_filter is None or name_filter in node.parts[0])
-        if list_only:
-            result = {"ok": True, "tests": [{"name": node.parts[0], "source_name": node.token.source_name or "<program>",
-                       "ok": None, "diagnostics": [], "steps": 0}
-                       for node in selected if node.kind == "test"], "stats": {"steps": 0, "passed": 0, "failed": 0}}
-        else:
-            result = run_test_program(selected, actual, source, max_steps=max_steps)
-        for case in result["tests"]:
+        budget = TestResultBudget()
+        def prepare_case(case):
             case["diagnostics"] = [located(item, source, modules) for item in case["diagnostics"]]
+            return case
+        if list_only:
+            cases = []
+            for node in selected:
+                if node.kind != "test":
+                    continue
+                cases.append(budget.add({"name": node.parts[0], "source_name": node.token.source_name or "<program>",
+                                        "ok": None, "diagnostics": [], "steps": 0}))
+                if budget.stopped:
+                    break
+            result = {"ok": not budget.stopped, "tests": cases, "stopped_early": budget.stopped,
+                      "stats": {"steps": 0, "passed": 0, "failed": int(budget.stopped)}}
+        else:
+            result = run_test_program(selected, actual, source, max_steps=max_steps,
+                                      result_budget=budget, prepare_case=prepare_case)
         result.update(version=__version__, mode="test", total=len(result["tests"]),
                       passed=result["stats"]["passed"], failed=result["stats"]["failed"],
                       diagnostics=[item for case in result["tests"] for item in case["diagnostics"]],
                       proposals=[], notes=[], values=[])
-        return result
+        return bound_test_result(result)
     except ContractFailure as error:
         result = contract_failure(error)
     except SigilError as error:
@@ -134,4 +146,4 @@ def test(source, data=None, *, max_steps=100000, contract=None, proposal_contrac
         result = failure(SigilError("E_LIMIT", "Program nesting or text encoding is invalid."), source, modules)
     result.update(mode="test", tests=[], total=0, passed=0, failed=0,
                   stats={"steps": 0, "passed": 0, "failed": 0})
-    return result
+    return bound_test_result(result)

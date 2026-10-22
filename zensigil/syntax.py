@@ -99,19 +99,26 @@ def lex(source):
                 else:
                     raise SigilError("E_TOKEN", f"Unexpected character {ch!r}.", line_no, pos + 1)
                 if kind in {"(", "[", "{"}:
-                    brackets.append(kind)
+                    brackets.append(Token(kind, value, line_no, start + 1))
                     if len(brackets) > 48:
                         raise SigilError("E_LIMIT", "Expression nesting exceeds 48 levels.", line_no, pos)
                 elif kind in {")", "]", "}"}:
-                    if not brackets or brackets.pop() != {")": "(", "]": "[", "}": "{"}[kind]:
+                    if not brackets:
                         raise SigilError("E_SYNTAX", f"Unmatched {kind!r}.", line_no, pos)
+                    opening = brackets[-1]
+                    expected = {"(": ")", "[": "]", "{": "}"}[opening.kind]
+                    if kind != expected:
+                        raise SigilError("E_SYNTAX", f"Expected {expected!r} to close {opening.kind!r} from line {opening.line}, column {opening.column}; found {kind!r}.", line_no, pos)
+                    brackets.pop()
             tokens.append(Token(kind, value, line_no, start + 1))
             if len(tokens) > 20000:
                 raise SigilError("E_LIMIT", "Program exceeds the token limit.", line_no, start + 1)
         if not brackets:
             tokens.append(Token("NEWLINE", None, line_no, len(raw) + 1))
     if brackets:
-        raise SigilError("E_SYNTAX", "Unclosed bracket or parenthesis.", len(lines), 1)
+        opening = brackets[-1]
+        expected = {"(": ")", "[": "]", "{": "}"}[opening.kind]
+        fail(opening, "E_SYNTAX", f"Unclosed {opening.kind!r}; add {expected!r} to close it.")
     tokens.extend(Token("DEDENT", None, len(lines), 1) for _ in levels[1:])
     tokens.append(Token("EOF", None, len(lines), 1))
     return tokens
@@ -213,7 +220,13 @@ class Parser:
             parts = (name, parameters, self.suite(), annotations, return_type)
             return Node(kind, token, parts + ((True,) if exported else ()))
         else:
-            fail(token, "E_SYNTAX", "Expected let, say, when, for, fn, return, rule, require, or propose.")
+            if kind == "NAME" and self.current.kind == "=":
+                fail(token, "E_SYNTAX", "Use 'let name = value' for a new binding, 'var name = value' for a mutable binding, or 'set name = value' to change a var.")
+            if kind == "INDENT":
+                fail(token, "E_INDENT", "Unexpected indentation. Indent only after a statement that opens a block with ':'.")
+            if kind == "otherwise":
+                fail(token, "E_SYNTAX", "'otherwise:' must follow a matching 'when' block at the same indentation.")
+            fail(token, "E_SYNTAX", "Expected a statement such as let, var, set, emit, say, when, for, while, fn, return, rule, test, require, propose, use, export, break, or continue.")
         self.need("NEWLINE")
         return Node(kind, token, parts)
 

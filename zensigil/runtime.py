@@ -9,6 +9,12 @@ from .typesys import Closure, FunctionRef, NamespaceRef, enforce
 from .modules import function_identity, module_scopes
 
 MAX_JSON_BYTES = 1_048_576
+MAX_EXECUTION_STEPS = 1_000_000
+
+
+def validate_step_limit(max_steps):
+    if type(max_steps) is not int or not 1 <= max_steps <= MAX_EXECUTION_STEPS:
+        raise SigilError("E_INPUT", "max_steps must be an integer from 1 to 1000000.")
 
 
 def is_number(value):
@@ -70,6 +76,7 @@ class LoopSignal(Exception):
 
 class Runtime:
     def __init__(self, program, data, max_steps=100000):
+        validate_step_limit(max_steps)
         self.functions = {function_identity(node): node for node in program if node.kind == "fn"}
         self.module_scopes = module_scopes(program)
         self.program, self.data = program, data
