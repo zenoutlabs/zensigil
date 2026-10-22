@@ -51,8 +51,8 @@ path longer than 103 characters can stop VS Code before the tests start.
 6. Read the JSON evidence file. It must be new and contain `"ok": true`. The CLI
    exit status alone is not proof of a successful test.
 
-The script checks completion, hover, definition, symbols, formatting, warning
-severity, error severity, and diagnostic repair. It applies the formatting edits
+The script checks completion, hover, definition, references, server restart,
+symbols, formatting, warning severity, error severity, and diagnostic repair. It applies the formatting edits
 before checking their result. VS Code can split a provider's whole-document edit
 into several small edits.
 

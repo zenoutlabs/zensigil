@@ -75,6 +75,36 @@ def project_output_inputs(project, output):
     return protected
 
 
+def project_test_sources(project, module_root, modules):
+    """Snapshot declared tests and their explicit imports for portable use."""
+    from .modules import file_modules
+    tests = {}
+    for path in project["tests"]:
+        if path == project["entry"]:
+            continue
+        source = read_text(path, 65536)
+        name = path.relative_to(module_root).as_posix()
+        tests[name] = source
+        if re.search(r"(?m)^[ \t]*use(?:[ \t]|$)", source):
+            for module, body in file_modules(source, path, root=module_root).items():
+                if module in modules and modules[module] != body:
+                    raise ValueError("A module changed while the project was being read. Save the project and retry.")
+                modules[module] = body
+    return tests
+
+
+def portable_entry_name(source_path, module_root):
+    """Only importable names need an explicit shared module identity."""
+    from .modules import module_name
+    name = source_path.resolve().relative_to(module_root).as_posix()
+    try:
+        return module_name(name)
+    except SigilError:
+        # Plain source files can use spaces and Unicode in their filenames.
+        # These names cannot occur in imports, so the legacy identity is safe.
+        return None
+
+
 def read_stdin():
     stream = getattr(sys.stdin, "buffer", sys.stdin)
     value = stream.read(65537)
@@ -393,18 +423,24 @@ def main(argv=None):
             # Ordinary unfinished drafts remain packable. Imports require a valid
             # syntax tree to discover their explicit dependency graph safely.
             modules = {}
+            module_root = resolve_module_root(args.module_root) if args.module_root else project["root"] if project else source_path.parent.resolve()
             if re.search(r"(?m)^[ \t]*use(?:[ \t]|$)", source):
                 from .modules import file_modules
-                module_root = resolve_module_root(args.module_root) if args.module_root else project["root"] if project else source_path.parent.resolve()
                 modules = file_modules(source, source_path, root=module_root)
-                module_paths = [module_root / name for name in modules]
+            tests = project_test_sources(project, module_root, modules) if project else {}
+            module_paths = [module_root / name for name in modules]
             program = {"format": FORMAT, "format_version": 1, "language_version": LANGUAGE_VERSION,
                        "name": args.name, "source": source,
                        "data_text": read_text(args.data, 1048576) if args.data is not None else "{}",
                        "contract_text": read_text(args.contract, MAX_CONTRACT_BYTES) if args.contract is not None else "",
                        "proposal_contract_text": read_text(args.proposal_contract, MAX_CONTRACT_BYTES) if args.proposal_contract is not None else ""}
+            entry_name = portable_entry_name(source_path, module_root)
+            if entry_name is not None:
+                program["entry_path"] = entry_name
             if modules:
                 program["modules"] = modules
+            if tests:
+                program["tests"] = tests
             text = encode_program(program)
             error_code = "E_OUTPUT"
             protected = [source_path, args.data, args.contract, args.proposal_contract] + module_paths
@@ -463,42 +499,48 @@ def main(argv=None):
         discovering_modules = False
         if not portable:
             module_paths = [module_root / name for name in modules]
-        if args.command in {"test", "lint"}:
-            from . import test as test_program
+        if args.command == "test":
+            if project or portable:
+                from .portable_testing import test_bundle
+                tests = project_test_sources(project, module_root, modules) if project else program.get("tests", {})
+                entry_name = ((portable_entry_name(source_path, module_root) or "<program>") if project else
+                              program.get("entry_path", "<program>"))
+                result = test_bundle(source, data, tests=tests, modules=modules,
+                                     source_name=entry_name, name_filter=args.filter,
+                                     list_only=args.list, **contracts)
+            else:
+                from . import test as test_program
+                result = test_program(source, data, modules=modules, name_filter=args.filter,
+                                      list_only=args.list, **contracts)
+                result["tests"] = [dict(case, source_file=str(source_path)) for case in result["tests"]]
+                if args.list:
+                    result["listed"] = True
+            if args.fail_if_empty and result["ok"] and result["total"] == 0:
+                result["ok"] = False
+                result["diagnostics"] = failure("E_TEST_EMPTY", "No tests match the selection.")["diagnostics"]
+            from .testing import bound_test_result
+            result = bound_test_result(result)
+        elif args.command == "lint":
             from .lint import lint
             sources = [(source_path, source, modules)]
             if project:
                 sources += [(path, read_text(path, 65536), None) for path in project["tests"] if path != source_path]
+            elif portable:
+                sources += [(name, text, modules) for name, text in program["tests"].items()]
             results = []
             for path, text, provided_modules in sources:
                 loaded = provided_modules if provided_modules is not None else file_modules(text, path, root=module_root)
-                tested = (lint(text, data, modules=loaded, **contracts) if args.command == "lint" else
-                          test_program(text, data, modules=loaded, name_filter=args.filter,
-                                       list_only=args.list, **contracts))
-                results.append(tested)
+                results.append(lint(text, data, modules=loaded, **contracts))
+            advisories = [dict(warning, source_name=(str(path) if warning.get("source_name") == "<program>" else warning.get("source_name")))
+                          for (path, _, _), item in zip(sources, results) for warning in item.get("warnings", [])]
+            unique = {(w["source_name"], w["line"], w["column"], w["code"]): w for w in advisories}
             result = {"ok": all(item["ok"] for item in results), "version": __version__,
-                      "total": sum(item.get("total", 0) for item in results),
-                      "passed": sum(item.get("passed", 0) for item in results),
-                      "failed": sum(item.get("failed", 0) for item in results),
-                      "tests": [dict(case, source_file=str(path)) for (path, _, _), item in zip(sources, results) for case in item.get("tests", [])],
-                      "stats": {"steps": sum(item.get("stats", {}).get("steps", 0) for item in results),
-                                "passed": sum(item.get("passed", 0) for item in results),
-                                "failed": sum(item.get("failed", 0) for item in results)},
+                      "mode": "lint", "warnings": list(unique.values()),
                       "diagnostics": [dict(entry, project_source=str(path)) for (path, _, _), item in zip(sources, results) for entry in item.get("diagnostics", [])],
-                      "proposals": [], "notes": [], "values": [], "mode": "test"}
-            if args.command == "lint":
-                advisories = [dict(warning, source_name=(str(path) if warning.get("source_name") == "<program>" else warning.get("source_name")))
-                              for (path, _, _), item in zip(sources, results) for warning in item.get("warnings", [])]
-                unique = {(w["source_name"], w["line"], w["column"], w["code"]): w for w in advisories}
-                result.update(mode="lint", warnings=list(unique.values()))
-                if args.strict and result["warnings"]:
-                    result["ok"] = False
-                    result["diagnostics"] += result["warnings"]
-            elif args.fail_if_empty and result["ok"] and result["total"] == 0:
+                      "proposals": [], "notes": [], "values": []}
+            if args.strict and result["warnings"]:
                 result["ok"] = False
-                result["diagnostics"] = failure("E_TEST_EMPTY", "No tests match the selection.")["diagnostics"]
-            if args.command == "test" and args.list:
-                result["listed"] = True
+                result["diagnostics"] += result["warnings"]
         else:
             result = (check if args.command == "check" else run)(source, data, modules=modules, **contracts)
     except SigilError as error:

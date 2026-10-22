@@ -1,5 +1,6 @@
 """Editor queries over explicit source, without executing a ZenSigil program."""
 from dataclasses import dataclass
+import json
 import os
 from pathlib import Path, PurePosixPath, PureWindowsPath
 import re
@@ -16,6 +17,9 @@ from .syntax import Node, Token, WORDS, lex
 
 MAX_DOCUMENTS = 64
 MAX_SOURCE_BYTES = 65536
+MAX_WORKSPACE_ROOTS = 32
+MAX_REFERENCE_LOCATIONS = 1000
+MAX_REFERENCE_BYTES = 512 * 1024
 SIGNATURE_ARGUMENTS = {
     "len": "value", "has": "record, key", "get": "record, key, fallback", "text": "value",
     "ceil": "number", "floor": "number", "abs": "number", "min": "left, right", "max": "left, right",
@@ -118,10 +122,12 @@ def at_position(source, where):
         return None
     used = 0
     for col, char in enumerate(lines[row]):
-        if used >= units:
+        if used == units:
             return row + 1, col + 1
         used += utf16(char)
-    return row + 1, len(lines[row]) + 1
+        if used > units:
+            return None  # A UTF-16 position cannot split a surrogate pair.
+    return (row + 1, len(lines[row]) + 1) if used == units else None
 
 
 def annotation_text(value):
@@ -196,8 +202,19 @@ class Document:
 class LanguageService:
     """A bounded collection of open buffers and workspace-scoped editor queries."""
     def __init__(self, roots=()):
-        self.roots = tuple(sorted({p for uri in roots if (p := file_path(uri)) is not None and p.is_dir()}, key=lambda p: len(str(p)), reverse=True))
+        self.roots = ()
+        self.set_roots(roots)
         self.documents = {}
+
+    def set_roots(self, roots):
+        candidates = {p for uri in roots if (p := file_path(uri)) is not None and p.is_dir()}
+        if len(candidates) > MAX_WORKSPACE_ROOTS:
+            raise SigilError('E_LIMIT', 'The editor supports at most 32 workspace roots.')
+        self.roots = tuple(sorted(candidates, key=lambda p: (-len(str(p)), str(p))))
+
+    def update_roots(self, added, removed):
+        removed_paths = {file_path(uri) for uri in removed}
+        self.set_roots([path.as_uri() for path in self.roots if path not in removed_paths] + list(added))
 
     def open(self, uri, source, version):
         if not isinstance(uri, str) or len(uri) > 4096 or not isinstance(source, str) or type(version) is not int:
@@ -315,17 +332,19 @@ class LanguageService:
                                                   'source': 'ZenSigil', 'code': item['code'], 'message': item['message']})
         return result
 
-    def index(self, uri, source=None):
+    def index(self, uri, source=None, *, contextual=True):
         document = self.documents[uri]
         source = document.source if source is None else source
         modules, uris = self.bundle(uri, source)
         nodes, sources = compile_program(source, modules)
-        return Index(nodes, sources, uris)
+        return Index(nodes, sources, uris, contextual=contextual)
 
     def completion(self, uri, where):
         if uri not in self.documents:
             return []
         coordinate = at_position(self.documents[uri].source, where)
+        if coordinate is None:
+            return []
         member = member_context(self.documents[uri].source, coordinate)
         if member is not None:
             alias, prefix, recovered = member
@@ -364,11 +383,60 @@ class LanguageService:
         entry = found[1]
         return {'uri': entry['uri'], 'range': entry['range']}
 
+    def references(self, uri, where, include_declaration=False):
+        """Find references in open programs and their explicit module graphs.
+
+        This does not scan the workspace. A declaration is identified by its URI
+        and range, so shadowed locals and same-name module functions stay apart.
+        """
+        if uri not in self.documents:
+            return []
+        try:
+            initial = self.index(uri, contextual=False)
+            found = initial.reference(uri, at_position(self.documents[uri].source, where))
+        except (SigilError, RecursionError):
+            return []
+        if found is None or found[1] is None:
+            return []
+        target = found[1]
+        locations = {}
+        result_bytes = 2
+        for document_uri in self.documents:
+            try:
+                if document_uri == uri:
+                    index = initial
+                else:
+                    # Only named functions cross source boundaries. The initial
+                    # graph already contains every use of a local declaration.
+                    if target['kind'] != 12 or file_path(target['uri']) is None:
+                        continue
+                    modules, uris = self.bundle(document_uri)
+                    if target['uri'] not in uris.values():
+                        continue
+                    nodes, sources = compile_program(self.documents[document_uri].source, modules)
+                    index = Index(nodes, sources, uris, contextual=False)
+            except (SigilError, RecursionError):
+                continue
+            for token, entry in index.references:
+                if entry is None or entry['uri'] != target['uri'] or entry['range'] != target['range']:
+                    continue
+                location = {'uri': index.uri(token), 'range': token_range(index.source(token), token)}
+                if not include_declaration and location == {'uri': target['uri'], 'range': target['range']}:
+                    continue
+                start, end = location['range']['start'], location['range']['end']
+                key = (location['uri'], start['line'], start['character'], end['line'], end['character'])
+                if key not in locations:
+                    result_bytes += len(json.dumps(location, ensure_ascii=True, separators=(',', ':')).encode('ascii')) + 1
+                locations[key] = location
+                if len(locations) > MAX_REFERENCE_LOCATIONS or result_bytes > MAX_REFERENCE_BYTES:
+                    raise SigilError('E_LIMIT', 'Reference results exceed the 1000-location or 512 KiB limit. Close unrelated programs and try again.')
+        return [locations[key] for key in sorted(locations)]
+
     def reference(self, uri, where):
         if uri not in self.documents:
             return None
         try:
-            index = self.index(uri)
+            index = self.index(uri, contextual=False)
             return index.reference(uri, at_position(self.documents[uri].source, where))
         except (SigilError, RecursionError):
             return None
@@ -377,7 +445,7 @@ class LanguageService:
         if uri not in self.documents:
             return []
         try:
-            index = self.index(uri)
+            index = self.index(uri, contextual=False)
             return [{'name': e['name'], 'kind': e['kind'], 'location': {'uri': e['uri'], 'range': e['range']},
                      'containerName': e['container']} for e in index.declarations if e['uri'] == uri]
         except (SigilError, RecursionError):
@@ -393,8 +461,10 @@ class LanguageService:
 
 class Index:
     """Resolve name tokens with the language's lexical scopes, including lambdas."""
-    def __init__(self, nodes, sources, uris):
+    def __init__(self, nodes, sources, uris, *, contextual=True):
         self.sources, self.uris = sources, uris
+        self.contextual = contextual
+        self.lines = {name: source.split('\n') for name, source in sources.items()}
         self.declarations, self.references, self.contexts = [], [], []
         self.functions, self.globals, self.member_tokens = {}, {}, {}
         for node in nodes:
@@ -423,11 +493,18 @@ class Index:
     def uri(self, token):
         return self.uris.get(token.source_name or '<program>')
 
-    def declare(self, token, kind=13, detail='', container=''):
-        entry = {'name': token.value, 'kind': kind, 'uri': self.uri(token), 'range': token_range(self.source(token), token),
+    def declare(self, token, kind=13, detail='', container='', *, reference=True):
+        lines = self.lines.get(token.source_name or '<program>', [''])
+        row = max(0, min(len(lines) - 1, token.line - 1))
+        column = max(0, token.column - 1)
+        width = max(1, len(str(token.value)))
+        where = {'start': {'line': row, 'character': utf16(lines[row][:column])},
+                 'end': {'line': row, 'character': utf16(lines[row][:column + width])}}
+        entry = {'name': token.value, 'kind': kind, 'uri': self.uri(token), 'range': where,
                  'detail': detail or str(token.value), 'container': container}
         self.declarations.append(entry)
-        self.references.append((token, entry))
+        if reference:
+            self.references.append((token, entry))
         return entry
 
     def find(self, name, scopes, token):
@@ -438,7 +515,7 @@ class Index:
         visible = dict(self.globals.get(token.source_name or '<program>', {}))
         for scope in scopes:
             visible.update(scope)
-        lines = self.source(token).split('\n')
+        lines = self.lines.get(token.source_name or '<program>', [''])
         raw = lines[token.line - 1] if 0 < token.line <= len(lines) else ''
         if indent is None:
             indent = len(raw) - len(raw.lstrip(' '))
@@ -467,7 +544,8 @@ class Index:
     def expr(self, node, scopes, container=''):
         if not isinstance(node, Node):
             return
-        self.remember(node.token, scopes)
+        if self.contextual:
+            self.remember(node.token, scopes)
         if node.kind == 'name':
             self.references.append((node.token, self.find(node.parts[0], scopes, node.token)))
         elif node.kind == 'field':
@@ -497,7 +575,8 @@ class Index:
     def block(self, nodes, scopes, container=''):
         for node in nodes:
             kind, p = node.kind, node.parts
-            self.remember(node.token, scopes)
+            if self.contextual:
+                self.remember(node.token, scopes)
             if kind in ('let', 'var'):
                 self.expr(p[1], scopes, container)
                 detail = kind + ' ' + p[0].value + (': ' + annotation_text(p[2]) if len(p) > 2 and p[2] else '')
@@ -514,7 +593,7 @@ class Index:
                 self.block(p[2], inner, p[0].value)
             elif kind in ('rule', 'test'):
                 token = Token('STRING', p[0], node.token.line, node.token.column, node.token.source_name)
-                self.declare(token, 12, kind + ' ' + str(p[0]), '')
+                self.declare(token, 12, kind + ' ' + str(p[0]), '', reference=False)
                 self.block(p[1], [{}] if kind == 'test' else scopes + [{}], str(p[0]))
             elif kind == 'when':
                 self.expr(p[0], scopes, container)
@@ -537,7 +616,8 @@ class Index:
                         for child in part:
                             if isinstance(child, tuple) and len(child) == 2 and isinstance(child[1], Node):
                                 self.expr(child[1], scopes, container)
-            self.after(node, scopes)
+            if self.contextual:
+                self.after(node, scopes)
 
     def reference(self, uri, coordinate):
         if coordinate is None:

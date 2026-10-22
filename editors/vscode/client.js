@@ -4,19 +4,25 @@ const MAX_HEADER = 8192;
 
 /** A bounded JSON-RPC stdio transport; no sockets, shell, or external package. */
 class Client {
-  constructor(child, notify, log = () => {}) {
+  constructor(child, notify, log = () => {}, stopped = () => {}) {
     this.child = child;
     this.notify = notify;
     this.log = log;
+    this.stopped = stopped;
     this.buffer = Buffer.alloc(0);
     this.length = null;
     this.nextId = 0;
     this.pending = new Map();
     this.closed = false;
+    this.disposing = false;
+    this.stopTimer = null;
     child.stdout.on('data', chunk => this.receive(chunk));
+    child.stdout.on('error', error => this.fail(error));
+    child.stdout.on('end', () => this.fail(new Error('ZenSigil language server output closed.')));
     child.stderr.on('data', chunk => log(String(chunk).slice(0, 4096)));
+    child.stderr.on('error', error => this.fail(error));
     child.on('error', error => this.fail(error));
-    child.on('exit', () => this.fail(new Error('ZenSigil language server stopped.')));
+    child.on('exit', () => this.fail(new Error('ZenSigil language server stopped.'), false));
     child.stdin.on('error', error => this.fail(error));
   }
   send(message) {
@@ -76,11 +82,12 @@ class Client {
           }
         } else if (typeof message.method === 'string') this.notify(message.method, message.params);
       }
-    } catch (error) { this.fail(error); this.child.kill(); }
+    } catch (error) { this.fail(error); }
   }
-  fail(error) {
+  fail(error, kill = true) {
     if (this.closed) return;
     this.closed = true;
+    clearTimeout(this.stopTimer);
     this.log(error.message);
     for (const pending of this.pending.values()) {
       clearTimeout(pending.timeout);
@@ -88,11 +95,14 @@ class Client {
     }
     this.pending.clear();
     this.buffer = Buffer.alloc(0);
+    if (kill) this.child.kill();
+    this.stopped(error);
   }
   dispose() {
-    if (this.closed) return;
-    const timer = setTimeout(() => this.child.kill(), 1000);
-    timer.unref?.();
+    if (this.closed || this.disposing) return;
+    this.disposing = true;
+    this.stopTimer = setTimeout(() => this.fail(new Error('ZenSigil language server did not stop in time.')), 1000);
+    this.stopTimer.unref?.();
     this.request('shutdown').then(() => this.notification('exit', {})).catch(() => this.child.kill());
   }
 }

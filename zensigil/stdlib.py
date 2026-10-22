@@ -59,15 +59,19 @@ def _decimal_text(value, token):
     return result
 
 
+def _ordered_category(value, category, token, name):
+    kind = "number" if type(value) in (int, float) else "string" if type(value) is str else None
+    if kind is None or category is not None and category != kind:
+        fail(token, "E_TYPE", f"{name}() requires all numbers or all strings.")
+    return kind
+
+
 def _ordered_keys(runtime, values, token, name):
     """Check before sorting, including singleton lists (bool is never numeric)."""
     category = None
     for value in values:
         runtime.tick(token)
-        kind = "number" if type(value) in (int, float) else "string" if type(value) is str else None
-        if kind is None or category is not None and category != kind:
-            fail(token, "E_TYPE", f"{name}() requires all numbers or all strings.")
-        category = kind
+        category = _ordered_category(value, category, token, name)
 
 
 def _compare(runtime, token):
@@ -311,19 +315,27 @@ def invoke(runtime, name, values, token):
         return runtime.bounded(result, token)
     if name in {"record_keys", "record_values", "record_entries", "record_merge"}:
         _expect(value, dict, name, token)
+        budget = _OutputBudget(runtime, token)
         if name == "record_merge":
             _expect(values[1], dict, name, token)
             if len(value.keys() | values[1].keys()) > 10000:
                 fail(token, "E_LIMIT", "record_merge() may produce at most 10,000 fields.")
-            result = dict(value)
-            for key, item in values[1].items():
+            result = {}
+            # Count only final fields. A large replaced value does not consume
+            # the final result budget. Preserve the first record's key order.
+            for key in dict.fromkeys((*value, *values[1])):
                 runtime.tick(token)
+                item = values[1][key] if key in values[1] else value[key]
+                budget.add(key, 1)
+                budget.add(item, 1)
                 result[key] = item
         else:
             result = []
             for key, item in value.items():
                 runtime.tick(token)
-                result.append(key if name == "record_keys" else item if name == "record_values" else {"key": key, "value": item})
+                entry = key if name == "record_keys" else item if name == "record_values" else {"key": key, "value": item}
+                budget.add(entry, 1)
+                result.append(entry)
         return runtime.bounded(result, token)
     if name == "contains":
         other = values[1]
@@ -339,16 +351,20 @@ def invoke(runtime, name, values, token):
         _expect(value, list, name, token)
         if name == "zip":
             _expect(values[1], list, name, token)
-            result = []
+            result, budget = [], _OutputBudget(runtime, token)
             for left, right in zip(value, values[1]):
                 runtime.tick(token)
-                result.append([left, right])
+                pair = [left, right]
+                budget.add(pair, 1)
+                result.append(pair)
             return runtime.bounded(result, token)
         if name == "enumerate":
-            result = []
+            result, budget = [], _OutputBudget(runtime, token)
             for index, item in enumerate(value):
                 runtime.tick(token)
-                result.append({"index": index, "value": item})
+                entry = {"index": index, "value": item}
+                budget.add(entry, 1)
+                result.append(entry)
             return runtime.bounded(result, token)
         if name == "sum":
             result = 0
@@ -375,6 +391,8 @@ def invoke(runtime, name, values, token):
                 result = runtime.bounded(runtime.call_value(callback, [result, item], token), token)
             return result
         result, decorated = [], []
+        budget = _OutputBudget(runtime, token)
+        keys_budget, key_category = _OutputBudget(runtime, token), None
         for index, item in enumerate(value):
             runtime.tick(token)
             mapped = runtime.call_value(callback, [item], token)
@@ -387,15 +405,19 @@ def invoke(runtime, name, values, token):
                 if name == "filter" and predicate:
                     result.append(item)
             elif name == "sort_by":
+                # Validate each key before calling the next item. Retained keys
+                # have a separate budget because they are not output values.
+                key_category = _ordered_category(mapped, key_category, token, name)
+                keys_budget.add(mapped, 1)
                 decorated.append((mapped, index, item))
             else:
+                budget.add(mapped, 1)
                 result.append(mapped)
         if name == "any":
             return False
         if name == "all":
             return True
         if name == "sort_by":
-            _ordered_keys(runtime, [entry[0] for entry in decorated], token, name)
             compare = _compare(runtime, token)
             decorated.sort(key=cmp_to_key(lambda left, right: compare(left[0], right[0])))
             result = [entry[2] for entry in decorated]

@@ -3,7 +3,7 @@ from pathlib import Path, PurePosixPath
 from .jsonio import loads
 from .programs import read_text
 
-PROJECT_VERSION = "0.7.0"
+PROJECT_VERSION = "0.8.0"
 MAX_MANIFEST_BYTES = 16384
 INPUT_FIELDS = ("data", "contract", "proposal_contract")
 
@@ -41,8 +41,8 @@ def load_project(directory):
         raise ValueError("Project manifest needs format, format_version, language_version and entry; tests, data, contract and proposal_contract are optional.")
     if value["format"] != "zensigil-project" or type(value["format_version"]) is not int or value["format_version"] != 1:
         raise ValueError("Unsupported ZenSigil project format or format_version.")
-    if type(value["language_version"]) is not str or value["language_version"] not in {"0.4.0", "0.5.0", "0.6.0", PROJECT_VERSION}:
-        raise ValueError(f"Project language_version must be 0.4.0, 0.5.0, 0.6.0 or {PROJECT_VERSION}.")
+    if type(value["language_version"]) is not str or value["language_version"] not in {"0.4.0", "0.5.0", "0.6.0", "0.7.0", PROJECT_VERSION}:
+        raise ValueError(f"Project language_version must be 0.4.0, 0.5.0, 0.6.0, 0.7.0 or {PROJECT_VERSION}.")
     entry = project_path(root, value["entry"])
     tests = value.get("tests", [])
     if type(tests) is not list or len(tests) > 32 or any(type(item) is not str for item in tests) or len(set(tests)) != len(tests):
@@ -94,8 +94,10 @@ To use input data, save a JSON object as `input.json`.
 Add `"data": "input.json"` to `zensigil.json`.
 Use `contract` and `proposal_contract` for optional JSON contract files.
 These paths start at this folder. Command flags override each chosen file.
-`pack .` includes the chosen input, contracts, and imported modules.
-It does not include separate test files.
+`pack .` includes the chosen input, contracts, imported modules, and test files.
+Run `zensigil test ../my-project.sigil.json --fail-if-empty` to test the shared file.
+Use `zensigil unpack ../my-project.sigil.json --output ../reopened-project`
+to create a project folder with the same input, contracts, and tests.
 
 Keep real secrets out of files that you share.
 ZenSigil is experimental. Proposed actions are data; they do not run outside actions.

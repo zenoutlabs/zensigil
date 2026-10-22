@@ -158,3 +158,13 @@ Existing input files, including declared defaults, cannot be used as forced outp
 `lint` can produce `W_TYPE` advice. Use `--strict` to treat warnings as a failed check.
 The pass does not execute source or prove correctness. The playground's **Find warnings**
 button uses the same advice. See [type diagnostics](type-diagnostics-v07.md).
+
+## Version 0.8 shared tests
+
+`pack PROJECT` includes separate test files and modules used only by tests.
+`test FILE.sigil.json` supports filtering, listing, and JUnit reports.
+`unpack` restores a project manifest with input, contracts, and test entries.
+Shared module tests run once. All roots share a work limit and a test-result size
+limit. A result limit reports `E_TEST_LIMIT` and `stopped_early: true`. Reported
+counts describe retained results, not a complete run of every selected test.
+See [the portable test reference](portable-tests-v08.md) for examples and limits.

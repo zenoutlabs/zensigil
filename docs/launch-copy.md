@@ -1,15 +1,16 @@
 # Public copy and launch limits
 
-The repository and the 0.6 prerelease are public at
+The source and experimental releases are public at
 [zenoutlabs/zensigil](https://github.com/zenoutlabs/zensigil).
 Use the latest release evidence before changing the version in an announcement.
 These text drafts are ready to review. Creating this file does not post them to a website or social account.
 
 ## Website entry
 
-**ZenSigil — an experimental programming language I created.**
+**ZenSigil — a programming language I am building.**
 
-I created ZenSigil to make programs readable and their results easy to inspect.
+I started ZenSigil because I wanted to build a language of my own.
+It is a small language for working with data and checking the result.
 I am building it with AI assistance. It has its own syntax, parser, interpreter,
 command-line tools, and a local browser playground.
 

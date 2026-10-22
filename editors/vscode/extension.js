@@ -11,6 +11,10 @@ function activate(context) {
   const selector = {language: 'zensigil', scheme: 'file'};
   let client;
   let ready = false;
+  let generation = 0;
+  let disposed = false;
+  let watchTimer;
+  const changedFiles = new Map();
   const opened = new Map();
   const asRange = range => new vscode.Range(range.start.line, range.start.character, range.end.line, range.end.character);
   const matches = document => document.languageId === 'zensigil' && document.uri.scheme === 'file';
@@ -46,13 +50,83 @@ function activate(context) {
     if (!ready || !vscode.workspace.isTrusted) return null;
     if (!sync(document)) return null;
     const version = document.version;
+    const current = generation;
     try {
       const result = await client.request(method, {textDocument: {uri: document.uri.toString()}, ...extra});
-      return document.version === version && !document.isClosed ? result : null;
+      return current === generation && ready && document.version === version && !document.isClosed ? result : null;
     } catch (error) { log(error.message); return null; }
   }
   const position = at => ({line: at.line, character: at.character});
-  context.subscriptions.push(diagnostics, output,
+  const folders = values => values.filter(folder => folder.uri.scheme === 'file').map(folder => ({uri: folder.uri.toString(), name: folder.name}));
+  function flushFiles() {
+    clearTimeout(watchTimer);
+    watchTimer = undefined;
+    const changes = [...changedFiles.values()];
+    changedFiles.clear();
+    if (!ready || !changes.length) return;
+    try { client.notification('workspace/didChangeWatchedFiles', {changes}); }
+    catch (error) { log(error.message); }
+  }
+  function changed(uri, type) {
+    if (!ready || uri.scheme !== 'file') return;
+    changedFiles.set(uri.toString(), {uri: uri.toString(), type});
+    if (changedFiles.size >= 256) flushFiles();
+    else if (!watchTimer) watchTimer = setTimeout(flushFiles, 100);
+  }
+  async function start() {
+    const current = ++generation;
+    ready = false;
+    opened.clear();
+    diagnostics.clear();
+    clearTimeout(watchTimer);
+    watchTimer = undefined;
+    changedFiles.clear();
+    client?.dispose();
+    client = undefined;
+    if (disposed || !vscode.workspace.isTrusted) return;
+    let candidate;
+    try {
+      const executable = vscode.workspace.getConfiguration('zensigil').get('pythonPath', 'python3');
+      // Isolated Python prevents workspace modules from replacing the installed server.
+      const child = spawn(executable, ['-I', '-m', 'zensigil', 'lsp'], {cwd: context.extensionPath, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true, shell: false});
+      candidate = new Client(child, (method, params) => {
+        if (current === generation && !disposed) notify(method, params);
+      }, log, () => {
+        if (current !== generation || disposed) return;
+        ready = false;
+        opened.clear();
+        diagnostics.clear();
+        log('Use ZenSigil: Restart Language Server to reconnect.');
+      });
+      client = candidate;
+      await candidate.request('initialize', {processId: process.pid, clientInfo: {name: 'zensigil-vscode'}, capabilities: {general: {positionEncodings: ['utf-16']}},
+        workspaceFolders: folders(vscode.workspace.workspaceFolders || [])});
+      if (current !== generation || disposed || candidate.closed) return;
+      candidate.notification('initialized', {});
+      ready = true;
+      for (const document of vscode.workspace.textDocuments) sync(document);
+    } catch (error) {
+      candidate?.dispose();
+      if (current !== generation || disposed) return;
+      ready = false;
+      log(error.message);
+      vscode.window.showErrorMessage('ZenSigil editor support could not start. Install ZenSigil in the selected Python environment, then use ZenSigil: Restart Language Server. See the ZenSigil output channel.');
+    }
+  }
+  const watcher = vscode.workspace.createFileSystemWatcher('**/*.zs');
+  context.subscriptions.push(diagnostics, output, watcher,
+    watcher.onDidCreate(uri => changed(uri, 1)),
+    watcher.onDidChange(uri => changed(uri, 2)),
+    watcher.onDidDelete(uri => changed(uri, 3)),
+    vscode.workspace.onDidChangeWorkspaceFolders(event => {
+      if (!ready) { start(); return; }
+      try { client.notification('workspace/didChangeWorkspaceFolders', {event: {added: folders(event.added), removed: folders(event.removed)}}); }
+      catch (error) { log(error.message); }
+    }),
+    vscode.workspace.onDidChangeConfiguration(event => {
+      if (event.affectsConfiguration('zensigil.pythonPath')) start();
+    }),
+    vscode.commands.registerCommand('zensigil.restartServer', start),
     vscode.workspace.onDidOpenTextDocument(sync),
     vscode.workspace.onDidChangeTextDocument(event => {
       diagnostics.delete(event.document.uri);
@@ -92,6 +166,10 @@ function activate(context) {
       const result = await query(document, 'textDocument/definition', {position: position(at)});
       return result ? new vscode.Location(vscode.Uri.parse(result.uri), asRange(result.range)) : null;
     }}),
+    vscode.languages.registerReferenceProvider(selector, {async provideReferences(document, at, context) {
+      const result = await query(document, 'textDocument/references', {position: position(at), context: {includeDeclaration: context.includeDeclaration}});
+      return (result || []).map(item => new vscode.Location(vscode.Uri.parse(item.uri), asRange(item.range)));
+    }}),
     vscode.languages.registerDocumentSymbolProvider(selector, {async provideDocumentSymbols(document) {
       const result = await query(document, 'textDocument/documentSymbol');
       return (result || []).map(item => new vscode.SymbolInformation(item.name, item.kind - 1, item.containerName,
@@ -101,23 +179,15 @@ function activate(context) {
       const result = await query(document, 'textDocument/formatting', {options});
       return (result || []).map(item => vscode.TextEdit.replace(asRange(item.range), item.newText));
     }}),
-    {dispose() { ready = false; client?.dispose(); }});
+    {dispose() {
+      disposed = true;
+      generation++;
+      ready = false;
+      clearTimeout(watchTimer);
+      changedFiles.clear();
+      client?.dispose();
+    }});
 
-  const executable = vscode.workspace.getConfiguration('zensigil').get('pythonPath', 'python3');
-  // -I prevents a workspace Python module from shadowing the installed interpreter.
-  // Python is one executable string; source never becomes shell arguments.
-  const child = spawn(executable, ['-I', '-m', 'zensigil', 'lsp'], {cwd: context.extensionPath, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true, shell: false});
-  client = new Client(child, notify, log);
-  client.request('initialize', {processId: process.pid, clientInfo: {name: 'zensigil-vscode'}, capabilities: {general: {positionEncodings: ['utf-16']}},
-    workspaceFolders: (vscode.workspace.workspaceFolders || []).filter(folder => folder.uri.scheme === 'file').map(folder => ({uri: folder.uri.toString(), name: folder.name}))})
-    .then(() => {
-      if (client.closed) return;
-      client.notification('initialized', {});
-      ready = true;
-      for (const document of vscode.workspace.textDocuments) sync(document);
-    }).catch(error => {
-      log(error.message);
-      vscode.window.showErrorMessage('ZenSigil editor support could not start. Install the matching ZenSigil version in the selected Python environment, then reload the window. See the ZenSigil output channel.');
-    });
+  start();
 }
 exports.activate = activate;

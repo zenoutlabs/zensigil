@@ -68,3 +68,45 @@ test('server errors are request errors while notifications remain usable', async
   client.notification('textDocument/didClose', {textDocument: {uri: 'file:///x.zs'}});
   process.kill();
 });
+
+test('input failure kills the child, clears requests, and notifies the host once', async () => {
+  const process = child();
+  const stopped = [];
+  const client = new Client(process, () => {}, () => {}, error => stopped.push(error.message));
+  const pending = assert.rejects(client.request('initialize'), /broken input/);
+  process.stdin.emit('error', new Error('broken input'));
+  await pending;
+  assert.equal(process.killed, true);
+  assert.equal(client.pending.size, 0);
+  assert.equal(stopped.length, 1);
+});
+
+test('graceful disposal is idempotent and cleans the stop timer on exit', async () => {
+  const process = child();
+  const stopped = [];
+  const client = new Client(process, () => {}, () => {}, error => stopped.push(error.message));
+  let raw = '';
+  process.stdin.on('data', chunk => { raw += chunk.toString(); });
+  client.dispose(); client.dispose();
+  assert.equal((raw.match(/shutdown/g) || []).length, 1);
+  process.stdout.write(frame({jsonrpc: '2.0', id: 1, result: null}));
+  await new Promise(resolve => setImmediate(resolve));
+  assert.match(raw, /exit/);
+  process.emit('exit', 0);
+  assert.equal(client.closed, true);
+  assert.equal(client.pending.size, 0);
+  assert.equal(process.killed, false);
+  assert.equal(stopped.length, 1);
+});
+
+test('output closure and pipe errors cannot leave a live unusable child', async () => {
+  for (const [stream, event] of [['stdout', 'end'], ['stdout', 'error'], ['stderr', 'error']]) {
+    const process = child();
+    const client = new Client(process, () => {});
+    const pending = assert.rejects(client.request('initialize'));
+    process[stream].emit(event, new Error('closed pipe'));
+    await pending;
+    assert.equal(process.killed, true);
+    assert.equal(client.pending.size, 0);
+  }
+});

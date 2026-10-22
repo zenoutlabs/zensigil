@@ -158,7 +158,8 @@ class Server:
                 'positionEncoding': 'utf-16',
                 'textDocumentSync': {'openClose': True, 'change': 1},
                 'completionProvider': {'resolveProvider': False, 'triggerCharacters': ['.']},
-                'hoverProvider': True, 'definitionProvider': True,
+                'hoverProvider': True, 'definitionProvider': True, 'referencesProvider': True,
+                'workspace': {'workspaceFolders': {'supported': True, 'changeNotifications': True}},
                 'documentSymbolProvider': True, 'documentFormattingProvider': True}}})
             return
         if not self.initialized:
@@ -176,9 +177,36 @@ class Server:
             return
         if method in ('initialized', '$/cancelRequest', '$/setTrace'):
             return
+        if method in ('workspace/didChangeWorkspaceFolders', 'workspace/didChangeWatchedFiles'):
+            try:
+                if method == 'workspace/didChangeWorkspaceFolders':
+                    event = params.get('event', {})
+                    if not isinstance(event, dict):
+                        raise ValueError('Workspace changes must be an object.')
+                    groups = [event.get(key) for key in ('added', 'removed')]
+                    if any(not isinstance(group, list) or len(group) > 32 or any(
+                            not isinstance(folder, dict) or not isinstance(folder.get('uri'), str)
+                            for folder in group) for group in groups):
+                        raise ValueError('Workspace changes require bounded folder lists.')
+                    self.service.update_roots(*([folder['uri'] for folder in group] for group in groups))
+                    self.publish()
+                else:
+                    changes = params.get('changes')
+                    if not isinstance(changes, list) or len(changes) > 256:
+                        raise ValueError('File changes require a bounded list.')
+                    # The event itself never causes a file read. Recheck only the
+                    # already-open programs and their explicit import graphs.
+                    if any(isinstance(change, dict) and type(change.get('type')) is int
+                           and change['type'] in (1, 2, 3) and isinstance(change.get('uri'), str)
+                           and change['uri'].endswith('.zs') and self.service.root(change['uri']) is not None
+                           for change in changes):
+                        self.publish()
+            except (SigilError, ValueError, TypeError, OSError, RuntimeError):
+                self.log('Ignored invalid workspace notification.')
+            return
         supported = {'textDocument/didOpen', 'textDocument/didChange', 'textDocument/didClose',
                      'textDocument/completion', 'textDocument/hover', 'textDocument/definition',
-                     'textDocument/documentSymbol', 'textDocument/formatting'}
+                     'textDocument/references', 'textDocument/documentSymbol', 'textDocument/formatting'}
         if method not in supported:
             if request:
                 self.error(identity, -32601, 'Method not found.')
@@ -210,6 +238,8 @@ class Server:
                 'textDocument/completion': lambda: self.service.completion(uri, params.get('position')),
                 'textDocument/hover': lambda: self.service.hover(uri, params.get('position')),
                 'textDocument/definition': lambda: self.service.definition(uri, params.get('position')),
+                'textDocument/references': lambda: self.service.references(uri, params.get('position'),
+                    isinstance(params.get('context'), dict) and params['context'].get('includeDeclaration') is True),
                 'textDocument/documentSymbol': lambda: self.service.symbols(uri),
                 'textDocument/formatting': lambda: self.service.formatting(uri),
             }

@@ -71,6 +71,13 @@ def verify():
         portable = cli("run", "latency-review.sigil.json", "--json")
         for field in ("ok", "values", "proposals", "notes"):
             assert portable[field] == result[field], (field, portable, result)
+        portable_tests = cli("test", "latency-review.sigil.json", "--fail-if-empty", "--json")
+        assert (portable_tests["total"], portable_tests["passed"]) == (2, 2), portable_tests
+        cli("unpack", "latency-review.sigil.json", "--output", "reopened")
+        reopened = cli("run", "reopened", "--json")
+        reopened_tests = cli("test", "reopened", "--fail-if-empty", "--json")
+        assert reopened["values"] == result["values"], reopened
+        assert (reopened_tests["total"], reopened_tests["passed"]) == (2, 2), reopened_tests
         # Also prove that the installed console entry point is available outside
         # the source checkout. The isolated module commands above test semantics.
         executable = Path(sys.executable).parent / ("zensigil.exe" if sys.platform == "win32" else "zensigil")
@@ -82,6 +89,7 @@ def verify():
               "source_import_excluded": True, "quickstart_files": sorted(files),
               "expected_summary": result["values"], "changed_summary": changed["values"],
               "invalid_input_rejected": True, "portable_without_source": True,
+              "portable_tests_without_source": True, "unpacked_project_defaults": True,
               "console_entry_point": True, "commands": commands}
     print(json.dumps(report, indent=2))
 

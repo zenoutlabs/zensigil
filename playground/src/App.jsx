@@ -3,7 +3,8 @@ import CodeEditor from './CodeEditor.jsx';
 import Preview from './Preview.jsx';
 import Guide from './Guide.jsx';
 import ModuleEditor from './ModuleEditor.jsx';
-import { blankProgram, decodeProgram, encodeProgram, validateProgram, readLibrary, readSavedProgram, removeSavedProgram, decodeDraft, filename, DRAFT_KEY, LIBRARY_KEY, sourceSelection } from './programs.mjs';
+import TestEditor from './TestEditor.jsx';
+import { blankProgram, decodeProgram, encodeProgram, validateProgram, readLibrary, readSavedProgram, removeSavedProgram, decodeDraft, filename, DRAFT_KEY, LIBRARY_KEY, sourceSelection, editProgram } from './programs.mjs';
 
 import { requestProgram } from './requests.mjs';
 
@@ -38,6 +39,10 @@ export default function App() {
   const [requestMode, setRequestMode] = useState('run');
   const [selectedModule, setSelectedModule] = useState('');
   const [moduleJump, setModuleJump] = useState(null);
+  const [selectedTest, setSelectedTest] = useState('');
+  const [testJump, setTestJump] = useState(null);
+  const testInput = useRef(null);
+  const testDetails = useRef(null);
   const moduleInput = useRef(null);
   const moduleDetails = useRef(null);
   const editor = useRef(null);
@@ -98,12 +103,12 @@ export default function App() {
 
   function edit(field, value) {
     touched.current = true; invalidate();
-    setProgram(current => ({...current, [field]: value})); setResult(null); setStatus('stale'); setMessage('');
+    setProgram(current => editProgram(current, field, value)); setResult(null); setStatus('stale'); setMessage('');
   }
   function openProgram(next, id = null, exampleId = '') {
     touched.current = true; invalidate();
     setProgram(next); setBaseline(JSON.stringify(next)); setSavedId(id); setSelected(exampleId);
-    setResult(null); setStatus('stale'); setMessage('Program opened. Run preview when ready.'); setPending(null); setDeleteId(null); setSelectedModule(''); setModuleJump(null);
+    setResult(null); setStatus('stale'); setMessage('Program opened. Run preview when ready.'); setPending(null); setDeleteId(null); setSelectedModule(''); setModuleJump(null); setSelectedTest(''); setTestJump(null);
   }
   function openExample(item) {
     openProgram({...blankProgram(), name: item.title, source: item.source, data_text: JSON.stringify(item.data, null, 2), contract_text: item.contract ? JSON.stringify(item.contract, null, 2) : '', proposal_contract_text: item.proposal_contract ? JSON.stringify(item.proposal_contract, null, 2) : '', modules: item.modules || {}}, null, item.id);
@@ -111,6 +116,8 @@ export default function App() {
   function focusSource(line, column, name = '<program>') {
     if (name && name !== '<program>' && Object.hasOwn(program.modules || {}, name)) {
       setSelectedModule(name); setModuleJump({line, column, name});
+    } else if (name && name !== '<program>' && Object.hasOwn(program.tests || {}, name)) {
+      setSelectedTest(name); setTestJump({line, column, name});
     } else editor.current?.focusLine(line, column);
   }
   useEffect(() => {
@@ -123,6 +130,16 @@ export default function App() {
     moduleInput.current.scrollIntoView({block: 'center'});
     setModuleJump(null);
   }, [moduleJump, selectedModule, program.modules]);
+  useEffect(() => {
+    if (!testJump || !testInput.current) return;
+    const source = program.tests?.[testJump.name];
+    if (typeof source !== 'string') return;
+    testDetails.current.open = true;
+    const range = sourceSelection(source, testJump.line, testJump.column);
+    testInput.current.focus(); testInput.current.setSelectionRange(range.start, range.end);
+    testInput.current.scrollIntoView({block: 'center'});
+    setTestJump(null);
+  }, [testJump, selectedTest, program.tests]);
   function openSaved(id) {
     try { openProgram(readSavedProgram(localStorage, id), id); }
     catch (error) { setMessage(`Could not open saved program: ${error.message}`); setPending(null); }
@@ -142,7 +159,7 @@ export default function App() {
     } catch (error) { setStorageError(`Could not save: ${error.message} Export a program file to keep a portable copy.`); return false; }
   }
   function exportProgram() {
-    try { downloadText(encodeProgram(program), `${filename(program.name)}.sigil.json`); setMessage('Program file downloaded. It includes your code, modules, input, and optional contracts.'); }
+    try { downloadText(encodeProgram(program), `${filename(program.name)}.sigil.json`); setMessage('Program file downloaded. It includes your code, modules, test files, input, and optional contracts.'); }
     catch (error) { setMessage(error.message); }
   }
   async function importProgram(event) {
@@ -176,7 +193,7 @@ export default function App() {
     <header className="topbar">
       <a className="wordmark" href="#" onClick={event => {event.preventDefault(); setPage('playground');}}>ZenSigil</a>
       <nav aria-label="Main navigation"><button aria-current={page === 'playground' ? 'page' : undefined} onClick={() => setPage('playground')}>Playground</button><button aria-current={page === 'guide' ? 'page' : undefined} onClick={() => setPage('guide')}>Language guide</button></nav>
-      <span className="version">v0.7.0 · experimental</span>
+      <span className="version">v0.8.0 · experimental</span>
     </header>
     {page === 'guide' ? <Guide onBack={() => setPage('playground')} /> : <main>
       <div className="intro"><h1>Expressive code. Clear intent.</h1><p>A language for your ideas. Write, check, and share programs.</p></div>
@@ -196,6 +213,7 @@ export default function App() {
       <details className="sample-data"><summary><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m7 4 6 6-6 6" /></svg><span>Input contract</span><small>Optional checks before your program runs</small></summary><div className="data-body"><label htmlFor="contract">Contract JSON (leave empty to skip)</label><textarea id="contract" value={program.contract_text} onChange={event => edit('contract_text', event.target.value)} spellCheck="false" /><p>A contract describes the input you expect, such as required fields, value types, and minimum numbers. Load the stock-review example for a starting point. Validation errors identify the affected input field.</p></div></details>
       <details className="sample-data"><summary><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m7 4 6 6-6 6" /></svg><span>Proposal contract</span><small>Optional checks on the proposals your program produces</small></summary><div className="data-body"><label htmlFor="proposal-contract">Proposal contract JSON (leave empty to skip)</label><textarea id="proposal-contract" value={program.proposal_contract_text} onChange={event => edit('proposal_contract_text', event.target.value)} spellCheck="false" /><p>Describe the fields expected for each action. A preview succeeds only when every proposal matches its action contract. Check program checks the contract itself; Run preview checks the actual proposals.</p></div></details>
       <ModuleEditor modules={program.modules || {}} selected={selectedModule} onSelect={setSelectedModule} onChange={value => edit('modules', value)} inputRef={moduleInput} detailsRef={moduleDetails} />
+      <TestEditor tests={program.tests || {}} selected={selectedTest} onSelect={setSelectedTest} onChange={value => edit('tests', value)} inputRef={testInput} detailsRef={testDetails} />
       <footer><p>Programs run on your local server. Proposals describe actions for review.</p><button className="download" disabled={!result?.ok || status !== 'done' || requestMode !== 'run'} onClick={() => downloadText(JSON.stringify(result, null, 2), `${filename(program.name)}-preview.json`)}>Download preview</button></footer>
     </main>}
   </>;

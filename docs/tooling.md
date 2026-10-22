@@ -77,7 +77,7 @@ this manifest:
 {
   "format": "zensigil-project",
   "format_version": 1,
-  "language_version": "0.6.0",
+  "language_version": "0.8.0",
   "entry": "main.zs",
   "tests": ["tests.zs"]
 }
@@ -89,7 +89,7 @@ paths, parent traversal, backslashes, non-`.zs` paths, and paths escaping throug
 symbolic links are rejected. `tests` is optional and accepts up to 32 distinct
 relative source paths. There is no automatic dependency installation or directory
 scan. Paths use `/` on every operating system.
-Version 0.6 also accepts existing project manifests marked `0.4.0` or `0.5.0`; current
+Version 0.8 also accepts existing project manifests marked `0.4.0` through `0.7.0`; current
 reserved names and language behavior apply to their source.
 
 `run` and `check` select `entry`. `test` checks the entry and listed test sources
@@ -97,8 +97,9 @@ as separate suites, then aggregates their explicit test blocks. Ordinary top-lev
 statements are checked but not executed by `test`. Tests can call pure module
 functions; each test gets a fresh local scope. Use `--data` to validate fixture input bindings. When no fixture is supplied,
 ordinary top-level input names remain unverified, while isolated tests can only
-use their own locals and pure functions. Each source suite has a bounded
-execution budget; the aggregate command can use one budget per listed source.
+use their own locals and pure functions. All selected tests share one execution
+budget and one 1 MiB JSON result limit. A limit failure stops the suite and sets
+`stopped_early`; the reported counts cover the retained results.
 A failed assertion or invalid source produces exit status 1. JSON includes
 `tests`, `total`, `passed`, `failed`, `stats`, and `diagnostics`. Test case source
 files identify their suite; diagnostic module filenames identify imported code.
@@ -206,10 +207,11 @@ trust and starts isolated Python without a shell.
 See [the editor protocol reference](editor-v05.md) for supported operations,
 source boundaries, limits and the real-host validation recipe. Automated
 protocol/provider tests and actual VS Code host validation are distinct; consult
-the release evidence for the recorded outcome. Rename, references, semantic
-tokens, signature-help popups, incremental document edits and dynamic workspace
-changes remain unsupported. A packaged VSIX does not establish Marketplace
-publication.
+the release evidence for the recorded outcome. Version 0.8 adds references within
+open programs and explicit imports, workspace folder updates, watched module
+changes, and server restart. See [the 0.8 editor reference](editor-v08.md). Rename,
+semantic tokens, signature-help popups, and incremental document edits remain
+unsupported. A packaged VSIX does not establish Marketplace publication.
 
 ## Project input settings in 0.7
 
@@ -220,5 +222,7 @@ one default. A blank path or invalid file produces an error; it cannot disable a
 
 Use `pack PROJECT --name NAME --output FILE.sigil.json` to share a runnable project.
 The portable file contains entry source, imported modules, input, and contracts.
-Separate project test files are not included. Share the source folder for those tests.
+Since 0.8, separate project test files and their imports are included. The optional
+entry_path field preserves source identity. Unpack restores a runnable manifest.
+See [portable projects and tests](portable-tests-v08.md).
 See the [quickstart](quickstart.md) for a complete measured-result example.

@@ -10,6 +10,7 @@ from .jsonio import loads
 from .contracts import MAX_CONTRACT_BYTES, diagnostic
 from .proposals import proposal_diagnostic
 from .lint import lint
+from .portable_testing import test_bundle
 
 PACKAGE = Path(__file__).resolve().parent
 WEB = PACKAGE / "web"
@@ -44,7 +45,7 @@ CATALOG = [
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "ZenSigil/0.7"
+    server_version = "ZenSigil/0.8"
 
     def setup(self):
         super().setup()
@@ -189,6 +190,15 @@ class Handler(BaseHTTPRequestHandler):
                                    "diagnostics": [proposal_diagnostic("E_PROPOSAL_CONTRACT", "$", str(error))]})
         if "modules" in body and type(body["modules"]) is not dict:
             return reply(failure(SigilError("E_IMPORT", "modules must be an object of source files."), body["source"]))
+        if route == "/api/test":
+            if "tests" in body and type(body["tests"]) is not dict:
+                return reply(failure(SigilError("E_TEST_BUNDLE", "tests must be an object of source files."), body["source"]))
+            if "entry_path" in body and type(body["entry_path"]) is not str:
+                return reply(failure(SigilError("E_TEST_BUNDLE", "entry_path must be a root-relative .zs path."), body["source"]))
+            return reply(test_bundle(body["source"], body["data"], tests=body.get("tests"),
+                                     source_name=body.get("entry_path", "<program>"),
+                                     modules=body.get("modules"), contract=contract,
+                                     proposal_contract=proposal_contract))
         operation = {"/api/run": run, "/api/check": check, "/api/lint": lint, "/api/test": test}[route]
         result = operation(body["source"], body["data"], contract=contract,
                            proposal_contract=proposal_contract, modules=body.get("modules"))

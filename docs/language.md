@@ -1,4 +1,4 @@
-# ZenSigil 0.7 language reference
+# ZenSigil 0.8 language reference
 
 ZenSigil is an experimental, deterministic language for readable rules. A program
 consumes a JSON object and produces structured values, notes and proposed actions. It does not call
@@ -199,3 +199,12 @@ known values. These warnings can find some errors before execution. They do not
 prove that a program is correct. See [type advice](type-diagnostics-v07.md).
 Project manifests can select input and contract files. Explicit flags override them.
 See [the quickstart](quickstart.md) and [tooling](tooling.md).
+
+## 0.8 reliability and project sharing
+
+The grammar is unchanged. Collection builders validate growing results before
+retaining them. Source errors identify mismatched and unfinished delimiters more
+precisely. The Python execution limit accepts only integers from 1 to 1,000,000.
+See [runtime limits and diagnostics](runtime-stability-v08.md) for changed errors
+and work accounting. [Portable projects](portable-tests-v08.md) can carry separate
+test sources. The [editor guide](editor-v08.md) explains Find References and refresh.

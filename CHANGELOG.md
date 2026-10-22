@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.8.0 — projects that travel with their tests
+
+- Keep separate test files and test-only modules in portable programs. Unpack a runnable project with its input and contracts.
+- Run bundled tests in the terminal and playground. Shared module tests run once under a shared work limit.
+- Add editor Find References, import refresh, workspace-folder updates, and a server restart command.
+- Check collection results before retaining them. Report earlier callback errors and more precise bracket errors.
+- Reject invalid Python execution limits with a structured error.
+- Reject empty or incomplete release manifests. Verify expected proposals and notes as well as structured values.
+- Keep the source grammar. See [compatibility](docs/compatibility.md) for changed limits, test counts, and diagnostic behavior.
+- Define the outside-use and compatibility evidence needed before beta and stable releases. 0.8 remains experimental.
+
 ## 0.7.0 — developer adoption and type advice
 
 - Add bounded input and contract paths to project manifests, with explicit flag overrides.

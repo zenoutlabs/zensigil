@@ -28,7 +28,7 @@ class PortableCodecTests(unittest.TestCase):
         program = document(source="when unfinished\n", data_text="{\n", contract_text=" { ",
                            proposal_contract_text="\t{", name="  Draft name  ")
         upgraded = decode_program(json.dumps(program))
-        self.assertEqual(upgraded["language_version"], "0.7.0")
+        self.assertEqual(upgraded["language_version"], "0.8.0")
         for key in ("source", "data_text", "contract_text", "proposal_contract_text", "name"):
             self.assertEqual(upgraded[key], program[key])
         self.assertEqual(decode_program(encode_program(upgraded)), upgraded)
@@ -178,7 +178,7 @@ class PortableCLITests(unittest.TestCase):
         extracted = self.directory / "extracted"
         result = self.cli("unpack", packed, "--output", extracted)
         self.assertEqual(result.returncode, 0, result.stderr)
-        for original, name in ((source, "program.zs"), (data, "input.json"),
+        for original, name in ((source, "unfinished.zs"), (data, "input.json"),
                                (contract, "input.contract.json"), (proposal, "proposal.contract.json")):
             self.assertEqual(original.read_bytes(), (extracted / name).read_bytes())
         self.assertEqual(self.cli("unpack", packed, "--output", extracted).returncode, 1)

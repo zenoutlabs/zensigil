@@ -47,6 +47,17 @@ exports.run = async function run() {
     const definitions = await vscode.commands.executeCommand('vscode.executeDefinitionProvider', uri, new vscode.Position(3, 13));
     assert(definitions.some(item => (item.uri || item.targetUri).toString() === uri.toString() && (item.range || item.targetRange).start.line === 0));
     report.checks.push('Real definition provider returns the function declaration.');
+
+    const references = await vscode.commands.executeCommand('vscode.executeReferenceProvider', uri, new vscode.Position(3, 13));
+    assert(references.some(item => item.uri.toString() === uri.toString() && item.range.start.line === 3));
+    report.checks.push('Real reference provider finds the function call.');
+    await vscode.commands.executeCommand('zensigil.restartServer');
+    await until(async () => {
+      const result = await vscode.commands.executeCommand('vscode.executeDefinitionProvider', uri, new vscode.Position(3, 13));
+      return result?.some(item => (item.uri || item.targetUri).toString() === uri.toString());
+    }, 'navigation after server restart');
+    report.checks.push('Server restart restores open source and navigation without reloading the window.');
+
     const symbols = await vscode.commands.executeCommand('vscode.executeDocumentSymbolProvider', uri);
     assert(symbols.some(item => item.name === 'amount'));
     report.checks.push('Real symbol provider lists local declarations.');

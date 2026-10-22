@@ -1,7 +1,7 @@
 # Editor support
 
 ZenSigil's language server provides diagnostics, completion, hover, definitions,
-document symbols and formatting. It checks source without executing programs.
+references, document symbols and formatting. It checks source without executing programs.
 The bundled VS Code extension uses the same `zensigil lsp` command available to
 other LSP clients. Both the Python server and JavaScript client use only their
 standard libraries; no network service or socket listener is involved.
@@ -11,7 +11,8 @@ standard libraries; no network service or socket listener is involved.
 1. Install the ZenSigil wheel in your chosen Python environment.
 2. Install the matching VSIX from the release assets.
 3. Set the user-level `zensigil.pythonPath` setting to that Python executable.
-4. Open the module root as a workspace and reload the window.
+4. Open the module root as a trusted workspace.
+5. Use **ZenSigil: Restart Language Server** if the server needs to reconnect.
 
 The extension runs only in a trusted workspace. Its machine-scoped interpreter
 setting cannot be supplied by a repository's workspace configuration. It starts
@@ -71,8 +72,10 @@ functions remain available in ordinary non-member completion.
 Only direct declared aliases receive namespace-member completion and navigation.
 The language accepts computed namespace values such as `let library = math`, but
 the editor does not infer the value of `library`, record fields, function return
-values or namespace parameters. It does not offer rename, find references,
-signature-help popups, semantic tokens or static type inference.
+values or namespace parameters. Find References covers direct declarations in open programs and their explicit
+imports. It does not scan unopened programs. See [editor changes in 0.8](editor-v08.md)
+for its scope and limits. Rename, signature-help popups, semantic tokens and full
+static type inference are not implemented.
 
 ## Filesystem boundaries and protocol
 
@@ -89,10 +92,11 @@ format edits. Invalid source is preserved. Wire limits are 8 KiB of headers and
 1 MiB per JSON message. Protocol errors go to stderr; stdout contains framed
 JSON-RPC messages only.
 
-Changes made by another application are picked up by a subsequent editor query;
-use **ZenSigil: Check Program** or edit a source buffer to refresh diagnostics.
-There is no file watcher. Reload the window after changing workspace folders or
-the interpreter setting.
+The extension watches workspace `.zs` files and refreshes import diagnostics after
+a disk change. Unsaved text still takes priority. Use **ZenSigil: Check Program**
+when a path is excluded from the watcher. Workspace folder changes update the
+server without a window reload. Changing `zensigil.pythonPath` restarts the server.
+Use **ZenSigil: Restart Language Server** to recover after a process failure.
 
 The transport and capability subset follow [Microsoft's LSP 3.17 specification](https://github.com/microsoft/language-server-protocol/blob/gh-pages/_specifications/lsp/3.17/specification.md).
 VS Code integration uses its documented [language providers](https://code.visualstudio.com/api/language-extensions/programmatic-language-features),
@@ -109,9 +113,10 @@ transport, provider routing, the dot trigger and no interpreter startup in an
 untrusted fake host. Tests are in `tests/test_editor_v06.py`,
 `tests/test_lsp_v05.py` and `editors/vscode/test/*.test.js`.
 
-The actual VS Code extension-host harness exists, but its previous local launch
-stalled at workspace trust and did not complete assertions. These automated
-results therefore do not claim successful validation inside the real VS Code UI.
+The 0.7 standalone harness passed eight checks in VS Code 1.141.0 with the installed
+release wheel. The workspace-import harness remained blocked by workspace trust.
+The 0.8 harness adds reference and restart checks. See the current release evidence
+for its run result. Simulated-host tests do not establish real-host success.
 
 ## Advisory warnings in 0.7
 

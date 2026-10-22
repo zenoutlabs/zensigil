@@ -206,12 +206,12 @@ class CLI06Tests(unittest.TestCase):
             result = self.cli('test', root, '--junit', report, '--json')
             self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
             cases = self.report(report).findall('testcase')
-            self.assertEqual(len(cases), 6)
+            self.assertEqual(len(cases), 4)
             identities = {(item.get('classname'), item.get('name')) for item in cases}
-            self.assertEqual(len(identities), 6)
+            self.assertEqual(len(identities), 4)
             self.assertEqual({item.get('file') for item in cases},
-                             {'lib/a.zs', 'lib/b.zs', str((root / 'main.zs').resolve()),
-                              str((root / 'tests.zs').resolve())})
+                             {'lib/a.zs', 'lib/b.zs', 'main.zs',
+                              'tests.zs'})
 
     def test_repl_explicit_data_modules_callbacks_and_portable_reopening(self):
         with tempfile.TemporaryDirectory() as directory:
