@@ -99,6 +99,14 @@ def verify():
         cli("init", str(project), cwd=directory)
         assert json.loads(cli("run", str(project), "--json", cwd=directory))["ok"]
         assert json.loads(cli("test", str(project), "--json", cwd=directory))["passed"] > 0
+        portable_project = Path(directory) / "project.sigil.json"
+        cli("pack", str(project), "--name", "Installed project",
+            "--output", str(portable_project), cwd=directory)
+        assert json.loads(cli("test", str(portable_project), "--fail-if-empty", "--json", cwd=directory))["passed"] == 2
+        reopened_project = Path(directory) / "reopened-project"
+        cli("unpack", str(portable_project), "--output", str(reopened_project), cwd=directory)
+        assert json.loads(cli("run", str(reopened_project), "--json", cwd=directory))["values"] == [{"greeting": "Hello from ZenSigil", "answer": 42}]
+        assert json.loads(cli("test", str(reopened_project), "--fail-if-empty", "--json", cwd=directory))["passed"] == 2
         cli("fmt", str(project / "main.zs"), "--check", cwd=directory)
         assert json.loads(cli("ast", str(project / "main.zs"), "--json", cwd=directory))
         modular = Path(directory) / "modular"
@@ -154,7 +162,8 @@ def verify():
     print(json.dumps({"ok": True, "version": zensigil.__version__, "installed_from": str(package),
                       "examples": 23, "portable_roundtrip": True, "module_roundtrip": True, "project_tools": True,
                       "closures_and_types": True, "collection_tools": True, "lsp_stdio": True, "http_resources": True,
-                      "namespace_api": True, "repl_transactions": True, "junit_xml": True}, indent=2))
+                      "namespace_api": True, "repl_transactions": True, "junit_xml": True,
+                      "portable_project_tests": True, "unpacked_project_defaults": True}, indent=2))
 
 
 if __name__ == "__main__":
