@@ -282,11 +282,17 @@ class Portable08CLITests(unittest.TestCase):
         self.assertEqual(path.read_bytes(), before)
 
     def test_pack_preserves_unfinished_test_without_imports(self):
-        (self.project / "tests.zs").write_text("test unfinished\n")
-        self.pack()
-        self.assertEqual(decode_program(self.portable.read_text())["tests"]["tests.zs"], "test unfinished\n")
-        failed = self.cli("test", self.portable, "--json", ok=False)
-        self.assertEqual(failed["diagnostics"][0]["source_name"], "tests.zs")
+        for label, raw_source in (("lf", b"test unfinished\n"), ("crlf", b"test unfinished\r\n")):
+            with self.subTest(newline=label):
+                (self.project / "tests.zs").write_bytes(raw_source)
+                portable = self.root / ("unfinished-" + label + ".sigil.json")
+                self.cli("pack", self.project, "--name", "Shared project", "--output", portable)
+                self.assertEqual(decode_program(portable.read_text())["tests"]["tests.zs"], raw_source.decode("utf-8"))
+                failed = self.cli("test", portable, "--json", ok=False)
+                self.assertEqual(failed["diagnostics"][0]["source_name"], "tests.zs")
+                output = self.root / ("unfinished-" + label)
+                self.cli("unpack", portable, "--output", output)
+                self.assertEqual((output / "tests.zs").read_bytes(), raw_source)
 
     def test_entry_imported_by_tests_keeps_one_identity_after_roundtrip(self):
         (self.project / "main.zs").write_text('export fn answer():\n    return 42\n' + CASE)
